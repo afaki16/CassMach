@@ -8,9 +8,9 @@ namespace CassMach.Domain.Entities
         public Guid ConversationId { get; set; }
         public string UserQuestion { get; set; }
         public string Brand { get; set; }
-        public string Model { get; set; }
-        public string ErrorCode { get; set; }
-        public string Symptom { get; set; }
+        public string? Model { get; set; }
+        public string? ErrorCode { get; set; }
+        public string? Symptom { get; set; }
         public string AiResponse { get; set; }
         public int AttemptNumber { get; set; }
         public bool? IsAccepted { get; set; }

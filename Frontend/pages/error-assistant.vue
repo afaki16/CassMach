@@ -214,16 +214,9 @@
             <v-icon size="24" color="white">mdi-robot-happy-outline</v-icon>
           </div>
 
-          <!-- System Message (parse result, errors, retry divider) -->
+          <!-- System Message (retry divider, done stats) -->
           <div v-if="msg.role === 'system'" class="chat-system-msg">
-            <div v-if="msg.meta?.type === 'parse'" class="parse-result">
-              <v-icon size="16" color="success">mdi-check-circle</v-icon>
-              <span>
-                <strong>{{ msg.meta.brand }}</strong> — Hata Kodu: <strong>{{ msg.meta.errorCode }}</strong>
-                <span v-if="msg.meta.model"> ({{ msg.meta.model }})</span>
-              </span>
-            </div>
-            <div v-else-if="msg.meta?.type === 'retry-divider'" class="retry-divider">
+            <div v-if="msg.meta?.type === 'retry-divider'" class="retry-divider">
               <div class="retry-divider-line"></div>
               <span class="retry-divider-text">
                 <v-icon size="14">mdi-refresh</v-icon>
@@ -281,8 +274,8 @@
           </div>
         </div>
 
-        <!-- Loading Indicator -->
-        <div v-if="isLoading" class="chat-message chat-message--assistant">
+        <!-- Loading Indicator (only before first chunk arrives) -->
+        <div v-if="isLoading && currentStreamingIndex === -1" class="chat-message chat-message--assistant">
           <div class="chat-avatar">
             <v-icon size="24" color="white">mdi-robot-happy-outline</v-icon>
           </div>
@@ -663,12 +656,6 @@ const streamSSE = async (url: string, body?: any) => {
 const handleSSEEvent = (event: any) => {
   switch (event.type) {
     case 'parse':
-      messages.value.push({
-        role: 'system',
-        content: '',
-        meta: { type: 'parse', brand: event.brand, errorCode: event.errorCode, model: event.model }
-      })
-      scrollToBottom()
       break
 
     case 'chunk':
@@ -1175,18 +1162,6 @@ useHead({ title: 'Hata Asistanı - CassMach' })
   width: 100%;
   max-width: 700px;
   margin: 0 auto;
-}
-
-.parse-result {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  color: #166534;
 }
 
 /* Retry Divider */
