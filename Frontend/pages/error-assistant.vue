@@ -364,6 +364,7 @@ const chatContainerRef = ref<HTMLElement | null>(null)
 const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const mirrorRef = ref<HTMLElement | null>(null)
 const currentStreamText = ref('')
+const currentStreamingIndex = ref(-1)
 
 const showSnackbar = ref(false)
 const snackbarText = ref('')
@@ -531,12 +532,45 @@ const fetchBalance = async () => {
 
 const formatMessage = (text: string) => {
   if (!text) return ''
-  return text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\n/g, '<br>')
+
+  const lines = text.split('\n')
+  const html: string[] = []
+  let inList = false
+
+  for (const rawLine of lines) {
+    const line = rawLine
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+
+    if (/^#{3}\s+(.+)/.test(line)) {
+      if (inList) { html.push('</ul>'); inList = false }
+      html.push(`<h4 class="md-h3">${line.replace(/^#{3}\s+/, '')}</h4>`)
+    } else if (/^#{2}\s+(.+)/.test(line)) {
+      if (inList) { html.push('</ul>'); inList = false }
+      html.push(`<h3 class="md-h2">${line.replace(/^#{2}\s+/, '')}</h3>`)
+    } else if (/^#{1}\s+(.+)/.test(line)) {
+      if (inList) { html.push('</ul>'); inList = false }
+      html.push(`<h2 class="md-h1">${line.replace(/^#{1}\s+/, '')}</h2>`)
+    } else if (/^\s*[-*]\s+(.+)/.test(line)) {
+      if (!inList) { html.push('<ul class="md-list">'); inList = true }
+      html.push(`<li>${line.replace(/^\s*[-*]\s+/, '')}</li>`)
+    } else if (/^\s*\d+\.\s+(.+)/.test(line)) {
+      if (inList) { html.push('</ul>'); inList = false }
+      html.push(`<div class="md-step">${line}</div>`)
+    } else if (line.trim() === '') {
+      if (inList) { html.push('</ul>'); inList = false }
+      html.push('<br>')
+    } else {
+      if (inList) { html.push('</ul>'); inList = false }
+      html.push(`<p class="md-p">${line}</p>`)
+    }
+  }
+  if (inList) html.push('</ul>')
+
+  return html.join('')
 }
 
 const scrollToBottom = () => {
@@ -639,11 +673,11 @@ const handleSSEEvent = (event: any) => {
 
     case 'chunk':
       currentStreamText.value += event.text
-      const lastAssistant = messages.value.findLast(m => m.role === 'assistant')
-      if (lastAssistant) {
-        lastAssistant.content = currentStreamText.value
+      if (currentStreamingIndex.value >= 0 && currentStreamingIndex.value < messages.value.length) {
+        messages.value[currentStreamingIndex.value].content = currentStreamText.value
       } else {
         messages.value.push({ role: 'assistant', content: currentStreamText.value })
+        currentStreamingIndex.value = messages.value.length - 1
       }
       scrollToBottom()
       break
@@ -682,6 +716,7 @@ const handleAsk = async () => {
   messages.value.push({ role: 'user', content: query })
   searchQuery.value = ''
   currentStreamText.value = ''
+  currentStreamingIndex.value = -1
   scrollToBottom()
 
   isLoading.value = true
@@ -701,6 +736,7 @@ const handleAsk = async () => {
 
 const handleRetry = async (conversationId: string) => {
   currentStreamText.value = ''
+  currentStreamingIndex.value = -1
   isLoading.value = true
   try {
     await streamSSE(API_ENDPOINTS.ERRORS.RETRY(conversationId))
@@ -1041,6 +1077,73 @@ useHead({ title: 'Hata Asistanı - CassMach' })
   line-height: 1.6;
   color: #334155;
   word-break: break-word;
+}
+
+.chat-text :deep(.md-h1) {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 16px 0 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.chat-text :deep(.md-h2) {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 14px 0 6px;
+}
+
+.chat-text :deep(.md-h3) {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #334155;
+  margin: 10px 0 4px;
+}
+
+.chat-text :deep(.md-list) {
+  margin: 4px 0 8px 0;
+  padding-left: 20px;
+  list-style: disc;
+}
+
+.chat-text :deep(.md-list li) {
+  margin-bottom: 2px;
+  font-size: 0.92rem;
+}
+
+.chat-text :deep(.md-step) {
+  font-weight: 600;
+  margin: 8px 0 2px;
+  font-size: 0.92rem;
+  color: #1e293b;
+}
+
+.chat-text :deep(.md-p) {
+  margin: 2px 0;
+}
+
+.chat-text :deep(code) {
+  background: #f1f5f9;
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: #0f172a;
+}
+
+.chat-message--user .chat-text :deep(.md-h1),
+.chat-message--user .chat-text :deep(.md-h2),
+.chat-message--user .chat-text :deep(.md-h3),
+.chat-message--user .chat-text :deep(.md-step) {
+  color: white;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.chat-message--user .chat-text :deep(code) {
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
 }
 
 .chat-bubble--loading { padding: 18px 24px; }

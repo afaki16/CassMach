@@ -164,7 +164,8 @@ namespace CassMach.API.Controllers
             }
             catch (Exception ex)
             {
-                await WriteSSEEvent(new { type = "error", message = "Bir hata oluştu: " + ex.Message });
+                var detail = ex.InnerException?.Message ?? ex.Message;
+                await WriteSSEEvent(new { type = "error", message = $"Bir hata oluştu: {detail}" });
             }
         }
 

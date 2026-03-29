@@ -178,7 +178,16 @@ Güvenlik uyarılarını mutlaka belirt.";
 
                 await foreach (var evt in _client.Messages.CreateStreaming(parameters, cancellationToken: cancellationToken))
                 {
-                    var text = evt.ToString();
+                    if (evt.TryPickStart(out var startEvent))
+                    {
+                        inputTokens = (int)startEvent.Message.Usage.InputTokens;
+                    }
+                    else if (evt.TryPickDelta(out var messageDeltaEvent))
+                    {
+                        outputTokens = (int)messageDeltaEvent.Usage.OutputTokens;
+                    }
+
+                    var text = ExtractStreamText(evt.ToString());
                     if (!string.IsNullOrEmpty(text))
                     {
                         fullText.Append(text);
@@ -189,15 +198,6 @@ Güvenlik uyarılarını mutlaka belirt.";
                             InputTokens = 0,
                             OutputTokens = 0
                         };
-                    }
-
-                    if (evt.TryPickStart(out var startEvent))
-                    {
-                        inputTokens = (int)startEvent.Message.Usage.InputTokens;
-                    }
-                    else if (evt.TryPickDelta(out var messageDeltaEvent))
-                    {
-                        outputTokens = (int)messageDeltaEvent.Usage.OutputTokens;
                     }
                 }
 
@@ -250,6 +250,31 @@ Güvenlik uyarılarını mutlaka belirt.";
             }
 
             return sb.ToString();
+        }
+
+        private static string ExtractStreamText(string eventJson)
+        {
+            try
+            {
+                var doc = JsonSerializer.Deserialize<JsonElement>(eventJson);
+
+                if (doc.TryGetProperty("type", out var eventType))
+                {
+                    var type = eventType.GetString();
+
+                    if (type == "content_block_delta" &&
+                        doc.TryGetProperty("delta", out var delta) &&
+                        delta.TryGetProperty("text", out var text))
+                    {
+                        return text.GetString() ?? "";
+                    }
+                }
+            }
+            catch
+            {
+                // not JSON or unexpected format
+            }
+            return null;
         }
 
         private static string ExtractTextContent(string fullResponse)
