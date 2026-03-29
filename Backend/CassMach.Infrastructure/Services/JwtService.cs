@@ -26,12 +26,18 @@ namespace CassMach.Infrastructure.Services
         private readonly IConfiguration _configuration;
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPasswordService _passwordService;
+        private readonly IPermissionService _permissionService;
 
-        public JwtService(IConfiguration configuration, IUnitOfWork unitOfWork, IPasswordService passwordService)
+        public JwtService(
+            IConfiguration configuration,
+            IUnitOfWork unitOfWork,
+            IPasswordService passwordService,
+            IPermissionService permissionService)
         {
             _configuration = configuration;
             _unitOfWork = unitOfWork;
             _passwordService = passwordService;
+            _permissionService = permissionService;
         }
 
     public async Task<Result<LoginResponseDto>> LoginAsync(string email, string password, string ipAddress, string userAgent, string deviceId = null, string deviceName = null, bool rememberMe = false, int? tenantId = null)
@@ -96,6 +102,9 @@ namespace CassMach.Infrastructure.Services
             user.LastLoginDate = DateTime.UtcNow;
             _unitOfWork.Users.Update(user);
             await _unitOfWork.SaveChangesAsync();
+
+            // Rol/izin değişikliklerinden sonra eski bellek önbelleğini kullanmayıp DB'den taze izin yüklensin
+            _permissionService.ClearUserPermissionCache(user.Id);
 
             var response = new LoginResponseDto
             {
@@ -341,6 +350,8 @@ namespace CassMach.Infrastructure.Services
                 return Result<LoginResponseDto>.Failure(Error.Failure(
                     ErrorCode.InternalError,
                     "Failed to generate refresh token"));
+
+            _permissionService.ClearUserPermissionCache(user.Id);
 
             var response = new LoginResponseDto
             {

@@ -154,6 +154,55 @@ namespace CassMach.Infrastructure.Persistence
             }
         }
 
+        /// <summary>
+        /// Yeni eklenen permission'ları ilgili rollere bağlar (ilk seed sonrası veya migration sonrası).
+        /// SuperAdmin/Admin: tüm izinler; User: Users + Errors (hata asistanı).
+        /// </summary>
+        public static async Task SyncRolePermissionsAsync(ApplicationDbContext context)
+        {
+            var allPermissions = await context.Permissions.AsNoTracking().ToListAsync();
+            if (allPermissions.Count == 0)
+                return;
+
+            var superAdmin = await context.Roles.FirstOrDefaultAsync(r => r.Name == RoleNames.SuperAdmin);
+            var admin = await context.Roles.FirstOrDefaultAsync(r => r.Name == RoleNames.Admin);
+            var userRole = await context.Roles.FirstOrDefaultAsync(r => r.Name == RoleNames.User);
+
+            if (superAdmin != null)
+                AddMissingRolePermissions(context, superAdmin.Id, allPermissions.Select(p => p.Id));
+
+            if (admin != null)
+                AddMissingRolePermissions(context, admin.Id, allPermissions.Select(p => p.Id));
+
+            if (userRole != null)
+            {
+                var userNames = Permissions.Helper.GetPermissionsByResource("Users");
+                var errorsNames = Permissions.Helper.GetPermissionsByResource("Errors");
+                var allowed = userNames.Concat(errorsNames).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var ids = allPermissions.Where(p => allowed.Contains(p.Name)).Select(p => p.Id);
+                AddMissingRolePermissions(context, userRole.Id, ids);
+            }
+
+            await context.SaveChangesAsync();
+        }
+
+        private static void AddMissingRolePermissions(ApplicationDbContext context, int roleId, IEnumerable<int> permissionIds)
+        {
+            var existingIds = context.RolePermissions
+                .Where(rp => rp.RoleId == roleId)
+                .Select(rp => rp.PermissionId)
+                .ToList()
+                .ToHashSet();
+
+            foreach (var pid in permissionIds)
+            {
+                if (existingIds.Contains(pid))
+                    continue;
+                context.RolePermissions.Add(new RolePermission { RoleId = roleId, PermissionId = pid });
+                existingIds.Add(pid);
+            }
+        }
+
         private static PermissionType MapActionToPermissionType(string action)
         {
             return action.ToLower() switch

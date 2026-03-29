@@ -21,13 +21,16 @@ export const useAuthStore = defineStore('auth', {
       return `${state.user.firstName.charAt(0)}${state.user.lastName.charAt(0)}`.toUpperCase()
     },
     hasPermission: (state) => (permission: string) => {
-      return state.permissions.includes(permission)
+      const want = (permission || '').toLowerCase()
+      return state.permissions.some((p) => (p || '').toLowerCase() === want)
     },
     hasRole: (state) => (role: string) => {
       return state.roles.includes(role)
     },
     hasAnyPermission: (state) => (permissions: string[]) => {
-      return permissions.some(permission => state.permissions.includes(permission))
+      return permissions.some((perm) =>
+        state.permissions.some((p) => (p || '').toLowerCase() === (perm || '').toLowerCase())
+      )
     },
     isTokenExpired: (state) => {
       if (!state.accessToken) return true

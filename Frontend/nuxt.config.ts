@@ -1,5 +1,5 @@
 export default defineNuxtConfig({
-  devtools: { enabled: true },
+  devtools: { enabled: false },
   compatibilityDate: '2025-07-26',
  
   // TypeScript configuration - geçici olarak kapatın
@@ -44,7 +44,7 @@ export default defineNuxtConfig({
       appName: 'CassMach',
       appVersion: '1.0.0',
       /** Varsayılan layout: default | gradient */
-      defaultLayout: process.env.NUXT_PUBLIC_DEFAULT_LAYOUT || 'default'
+      defaultLayout:'gradient'
     }
   },
   

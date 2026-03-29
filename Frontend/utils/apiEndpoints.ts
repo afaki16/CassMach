@@ -61,6 +61,26 @@ export const API_ENDPOINTS = {
     REVOKE_USER_SESSIONS: (userId: number) => `/api/admin/users/${userId}/revoke-sessions`
   },
 
+  // Error Assistant endpoints (SSE streaming)
+  ERRORS: {
+    ASK: '/api/errors/ask',
+    RETRY: (conversationId: string) => `/api/errors/${conversationId}/retry`,
+    ACCEPT: (conversationId: string) => `/api/errors/${conversationId}/accept`,
+    HISTORY: '/api/errors/history',
+    BALANCE: '/api/errors/balance'
+  },
+
+  // Admin AI endpoints
+  ADMIN_AI: {
+    USERS: '/api/admin/ai/users',
+    USER_USAGE: (userId: number) => `/api/admin/ai/users/${userId}/usage`,
+    TOPUP: (userId: number) => `/api/admin/ai/users/${userId}/topup`,
+    GIFT: (userId: number) => `/api/admin/ai/users/${userId}/gift`,
+    SETTINGS: '/api/admin/ai/settings',
+    UPDATE_SETTING: (key: string) => `/api/admin/ai/settings/${key}`,
+    DASHBOARD: '/api/admin/ai/dashboard'
+  },
+
   // Dashboard endpoints
   DASHBOARD: {
     STATS: '/api/dashboard/stats',

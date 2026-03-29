@@ -47,11 +47,12 @@ app.MapControllers();
 // Seed data only if database is empty
 await SeedData.SeedAsyncIfEmpty(app.Services);
 
-// Her başlatmada eksik permission'ları ekle
+// Her başlatmada eksik permission'ları ekle; rollere yeni izinleri bağla (ör. Errors.*)
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<CassMach.Infrastructure.Persistence.ApplicationDbContext>();
     await CassMach.Infrastructure.Persistence.SeedData.SeedPermissionsAsync(context);
+    await CassMach.Infrastructure.Persistence.SeedData.SyncRolePermissionsAsync(context);
 }
 
 app.Run();

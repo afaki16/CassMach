@@ -15,6 +15,18 @@
     },
     
     {
+      title: 'AI Assistant',
+      icon: 'mdi-robot-happy-outline',
+      children: [
+        {
+          title: 'Hata Asistanı',
+          icon: 'mdi-chat-processing-outline',
+          to: '/error-assistant',
+          permission: 'Errors.Read'
+        }
+      ]
+    },
+    {
       title: 'User Management',
       icon: 'mdi-account-group',
       children: [

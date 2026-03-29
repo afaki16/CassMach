@@ -49,6 +49,16 @@ export const useApi = () => {
     }
   }
 
+  const patch = async <T>(url: string, data?: any): Promise<ApiResponse<T>> => {
+    try {
+      const response = await $api.patch(url, data)
+      return response.data
+    } catch (error) {
+      handleApiError(error)
+      throw error
+    }
+  }
+
   const del = async <T>(url: string): Promise<ApiResponse<T>> => {
     try {
       const response = await $api.delete(url)
@@ -63,6 +73,7 @@ export const useApi = () => {
     get,
     post,
     put,
+    patch,
     delete: del,
     handleApiError
   }
