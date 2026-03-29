@@ -270,7 +270,7 @@
 
           <!-- Chat Bubble -->
           <div v-else class="chat-bubble">
-            <p class="chat-text" v-html="formatMessage(msg.content)"></p>
+            <div class="chat-text" v-html="formatMessage(msg.content)"></div>
           </div>
         </div>
 
@@ -538,15 +538,18 @@ const formatMessage = (text: string) => {
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/`([^`]+)`/g, '<code>$1</code>')
 
-    if (/^#{3}\s+(.+)/.test(line)) {
+    if (/^#{4,}\s+(.+)/.test(line)) {
       if (inList) { html.push('</ul>'); inList = false }
-      html.push(`<h4 class="md-h3">${line.replace(/^#{3}\s+/, '')}</h4>`)
-    } else if (/^#{2}\s+(.+)/.test(line)) {
+      html.push(`<h5 class="md-h4">${line.replace(/^#{4,}\s+/, '')}</h5>`)
+    } else if (/^###\s+(.+)/.test(line)) {
       if (inList) { html.push('</ul>'); inList = false }
-      html.push(`<h3 class="md-h2">${line.replace(/^#{2}\s+/, '')}</h3>`)
-    } else if (/^#{1}\s+(.+)/.test(line)) {
+      html.push(`<h4 class="md-h3">${line.replace(/^###\s+/, '')}</h4>`)
+    } else if (/^##\s+(.+)/.test(line)) {
       if (inList) { html.push('</ul>'); inList = false }
-      html.push(`<h2 class="md-h1">${line.replace(/^#{1}\s+/, '')}</h2>`)
+      html.push(`<h3 class="md-h2">${line.replace(/^##\s+/, '')}</h3>`)
+    } else if (/^#\s+(.+)/.test(line)) {
+      if (inList) { html.push('</ul>'); inList = false }
+      html.push(`<h2 class="md-h1">${line.replace(/^#\s+/, '')}</h2>`)
     } else if (/^\s*[-*]\s+(.+)/.test(line)) {
       if (!inList) { html.push('<ul class="md-list">'); inList = true }
       html.push(`<li>${line.replace(/^\s*[-*]\s+/, '')}</li>`)
@@ -1089,6 +1092,13 @@ useHead({ title: 'Hata Asistanı - CassMach' })
   margin: 10px 0 4px;
 }
 
+.chat-text :deep(.md-h4) {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #475569;
+  margin: 8px 0 4px;
+}
+
 .chat-text :deep(.md-list) {
   margin: 4px 0 8px 0;
   padding-left: 20px;
@@ -1123,6 +1133,7 @@ useHead({ title: 'Hata Asistanı - CassMach' })
 .chat-message--user .chat-text :deep(.md-h1),
 .chat-message--user .chat-text :deep(.md-h2),
 .chat-message--user .chat-text :deep(.md-h3),
+.chat-message--user .chat-text :deep(.md-h4),
 .chat-message--user .chat-text :deep(.md-step) {
   color: white;
   border-color: rgba(255, 255, 255, 0.2);
