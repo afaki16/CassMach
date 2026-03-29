@@ -25,6 +25,10 @@ namespace CassMach.Infrastructure.Persistence
         public DbSet<RolePermission> RolePermissions { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Tenant> Tenants { get; set; }
+        public DbSet<UserTokenBalance> UserTokenBalances { get; set; }
+        public DbSet<ErrorSolution> ErrorSolutions { get; set; }
+        public DbSet<TokenTransaction> TokenTransactions { get; set; }
+        public DbSet<SystemSetting> SystemSettings { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

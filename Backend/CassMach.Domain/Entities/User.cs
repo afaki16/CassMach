@@ -29,11 +29,16 @@ namespace CassMach.Domain.Entities
     public ICollection<UserRole> UserRoles { get; set; }
     public ICollection<RefreshToken> RefreshTokens { get; set; }
     public Tenant Tenant { get; set; }
+    public UserTokenBalance TokenBalance { get; set; }
+    public ICollection<ErrorSolution> ErrorSolutions { get; set; }
+    public ICollection<TokenTransaction> TokenTransactions { get; set; }
 
     public User()
         {
             UserRoles = new HashSet<UserRole>();
             RefreshTokens = new HashSet<RefreshToken>();
+            ErrorSolutions = new HashSet<ErrorSolution>();
+            TokenTransactions = new HashSet<TokenTransaction>();
             Status = UserStatus.Active;
             EmailConfirmed = false;
             PhoneConfirmed = false;

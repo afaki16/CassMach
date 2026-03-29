@@ -38,6 +38,24 @@ namespace CassMach.Domain.Constants
         public const string Delete = "Tenants.Delete";
     }
 
+    // Error assistant permissions
+    public static class Errors
+    {
+        public const string Read = "Errors.Read";
+        public const string Create = "Errors.Create";
+        public const string Update = "Errors.Update";
+        public const string Delete = "Errors.Delete";
+    }
+
+    // Admin panel permissions
+    public static class AdminPanel
+    {
+        public const string Read = "AdminPanel.Read";
+        public const string Create = "AdminPanel.Create";
+        public const string Update = "AdminPanel.Update";
+        public const string Delete = "AdminPanel.Delete";
+    }
+
     // Helper methods
     public static class Helper
     {

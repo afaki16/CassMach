@@ -1,6 +1,8 @@
+using CassMach.Application.Common.Interfaces;
 using CassMach.Application.Interfaces;
 using CassMach.Domain.Common.Interfaces;
 using CassMach.Domain.Common.Interfaces.Repositories;
+using CassMach.Infrastructure.Configuration;
 using CassMach.Infrastructure.Persistence;
 using CassMach.Infrastructure.Identity;
 using CassMach.Infrastructure.Repositories;
@@ -30,6 +32,7 @@ namespace CassMach.Infrastructure
         // Add Repositories
         services.AddScoped<IUnitOfWork, UnitOfWork>();
         services.AddRepositories(typeof(DependencyInjection).Assembly);
+        services.AddScoped<ISystemSettingRepository, SystemSettingRepository>();
 
 
         // Add Memory Cache
@@ -44,6 +47,10 @@ namespace CassMach.Infrastructure
         services.AddScoped<IPermissionService, PermissionService>();
         services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
         services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+
+        // Add Claude API
+        services.Configure<ClaudeApiSettings>(configuration.GetSection("ClaudeApi"));
+        services.AddScoped<IClaudeService, ClaudeService>();
 
         // Add JWT Authentication
         AddJwtAuthentication(services, configuration);

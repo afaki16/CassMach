@@ -23,6 +23,8 @@ using CassMach.Application.Features.Users.Commands.DeleteUser;
 using CassMach.Application.Features.Tenants.Commands.CreateTenant;
 using CassMach.Application.Features.Tenants.Commands.UpdateTenant;
 using CassMach.Application.Features.Tenants.Commands.DeleteTenant;
+using CassMach.Application.Features.Errors.Dtos;
+using CassMach.Application.Features.Admin.Dtos;
 using CassMach.Domain.Entities;
 using CassMach.Domain.Common.Enums;
 namespace CassMach.Application.Features.Mappings;
@@ -136,6 +138,19 @@ namespace CassMach.Application.Features.Mappings;
         // DTO -> Command mappings (Controller'da kullan�l�r)
         CreateMap<CreateTenantDto, CreateTenantCommand>();
         CreateMap<UpdateTenantDto, UpdateTenantCommand>();
+
+        // ErrorSolution mappings
+        CreateMap<ErrorSolution, ErrorSolutionDto>();
+        CreateMap<ErrorSolution, ErrorSolutionListDto>();
+
+        // UserTokenBalance mappings
+        CreateMap<UserTokenBalance, TokenBalanceDto>();
+
+        // SystemSetting mappings
+        CreateMap<SystemSetting, SystemSettingDto>();
+
+        // TokenTransaction mappings
+        CreateMap<TokenTransaction, TokenTransactionDto>();
     }
     }
 

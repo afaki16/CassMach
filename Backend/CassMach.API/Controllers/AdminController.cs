@@ -1,7 +1,15 @@
+using CassMach.Application.Features.Admin.Commands.GiftTokens;
+using CassMach.Application.Features.Admin.Commands.TopUpTokens;
+using CassMach.Application.Features.Admin.Commands.UpdateSetting;
+using CassMach.Application.Features.Admin.Commands.RevokeUserSessions;
+using CassMach.Application.Features.Admin.Dtos;
 using CassMach.Application.Features.Admin.Queries.GetActiveUserCount;
 using CassMach.Application.Features.Admin.Queries.GetActiveUsersSnapshot;
+using CassMach.Application.Features.Admin.Queries.GetAllSettings;
+using CassMach.Application.Features.Admin.Queries.GetAllUsersAdmin;
+using CassMach.Application.Features.Admin.Queries.GetDashboard;
 using CassMach.Application.Features.Admin.Queries.GetRevokableUsers;
-using CassMach.Application.Features.Admin.Commands.RevokeUserSessions;
+using CassMach.Application.Features.Admin.Queries.GetUserUsage;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -85,6 +93,86 @@ namespace CassMach.API.Controllers
         {
             var command = new RevokeUserSessionsCommand { UserId = userId, Reason = reason };
             var result = await _mediator.Send(command);
+            return HandleResult(result);
+        }
+
+        [HttpGet("ai/users")]
+        [Authorize(Policy = "adminpanel.read")]
+        public async Task<IActionResult> GetAllUsersAdmin([FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string searchTerm = null)
+        {
+            var query = new GetAllUsersAdminQuery { Page = page, PageSize = pageSize, SearchTerm = searchTerm };
+            var result = await _mediator.Send(query);
+            return HandlePagedResult(result);
+        }
+
+        [HttpGet("ai/users/{userId:int}/usage")]
+        [Authorize(Policy = "adminpanel.read")]
+        public async Task<IActionResult> GetUserUsage(int userId)
+        {
+            var query = new GetUserUsageQuery { UserId = userId };
+            var result = await _mediator.Send(query);
+            return HandleResult(result);
+        }
+
+        [HttpPost("ai/users/{userId:int}/topup")]
+        [Authorize(Policy = "adminpanel.create")]
+        public async Task<IActionResult> TopUp(int userId, [FromBody] TopUpDto dto)
+        {
+            var command = new TopUpTokensCommand
+            {
+                UserId = userId,
+                CreditAmount = dto.CreditAmount,
+                Description = dto.Description,
+                AdminUserId = GetCurrentUserId()
+            };
+            var result = await _mediator.Send(command);
+            return HandleResult(result);
+        }
+
+        [HttpPost("ai/users/{userId:int}/gift")]
+        [Authorize(Policy = "adminpanel.create")]
+        public async Task<IActionResult> GiftTokens(int userId, [FromBody] GiftTokensDto dto)
+        {
+            var command = new GiftTokensCommand
+            {
+                UserId = userId,
+                CreditAmount = dto.CreditAmount,
+                Description = dto.Description,
+                AdminUserId = GetCurrentUserId()
+            };
+            var result = await _mediator.Send(command);
+            return HandleResult(result);
+        }
+
+        [HttpGet("ai/settings")]
+        [Authorize(Policy = "adminpanel.read")]
+        public async Task<IActionResult> GetSettings()
+        {
+            var query = new GetAllSettingsQuery();
+            var result = await _mediator.Send(query);
+            return HandleResult(result);
+        }
+
+        [HttpPatch("ai/settings/{key}")]
+        [Authorize(Policy = "adminpanel.update")]
+        public async Task<IActionResult> UpdateSetting(string key, [FromBody] UpdateSettingDto dto)
+        {
+            var command = new UpdateSettingCommand
+            {
+                Key = key,
+                Value = dto.Value,
+                AdminUserId = GetCurrentUserId()
+            };
+            var result = await _mediator.Send(command);
+            return HandleResult(result);
+        }
+
+        [HttpGet("ai/dashboard")]
+        [Authorize(Policy = "adminpanel.read")]
+        public async Task<IActionResult> GetDashboard()
+        {
+            var query = new GetDashboardQuery();
+            var result = await _mediator.Send(query);
             return HandleResult(result);
         }
     }

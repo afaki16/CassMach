@@ -1,5 +1,7 @@
 using FluentValidation;
 using CassMach.Application.Common.Behaviors;
+using CassMach.Application.Common.Interfaces;
+using CassMach.Application.Services;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
@@ -25,6 +27,9 @@ namespace CassMach.Application
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
             services.AddTransient(typeof(IPipelineBehavior<,>), typeof(PerformanceBehavior<,>));
+
+            // Add Application Services
+            services.AddScoped<ITokenService, TokenService>();
 
             return services;
         }

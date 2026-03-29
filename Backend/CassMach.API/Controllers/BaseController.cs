@@ -49,6 +49,14 @@ public abstract class BaseController : ControllerBase
         return BadRequest(new { success = false, error = result.Error });
     }
 
+    protected int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!int.TryParse(userIdClaim, out var userId))
+            throw new UnauthorizedAccessException("User ID not found in claims");
+        return userId;
+    }
+
     protected string GetIpAddress()
     {
         return HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";

@@ -20,6 +20,10 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     private readonly Lazy<IPermissionRepository> _permissions;
     private readonly Lazy<IRefreshTokenRepository> _refreshTokens;
     private readonly Lazy<ITenantRepository> _tenants;
+    private readonly Lazy<IErrorSolutionRepository> _errorSolutions;
+    private readonly Lazy<IUserTokenBalanceRepository> _userTokenBalances;
+    private readonly Lazy<ITokenTransactionRepository> _tokenTransactions;
+    private readonly Lazy<ISystemSettingRepository> _systemSettings;
 
     public UnitOfWork(ApplicationDbContext context, IServiceProvider serviceProvider)
     {
@@ -32,7 +36,10 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
         _permissions = new Lazy<IPermissionRepository>(() => _serviceProvider.GetRequiredService<IPermissionRepository>());
         _refreshTokens = new Lazy<IRefreshTokenRepository>(() => _serviceProvider.GetRequiredService<IRefreshTokenRepository>());
         _tenants = new Lazy<ITenantRepository>(() => _serviceProvider.GetRequiredService<ITenantRepository>());
-
+        _errorSolutions = new Lazy<IErrorSolutionRepository>(() => _serviceProvider.GetRequiredService<IErrorSolutionRepository>());
+        _userTokenBalances = new Lazy<IUserTokenBalanceRepository>(() => _serviceProvider.GetRequiredService<IUserTokenBalanceRepository>());
+        _tokenTransactions = new Lazy<ITokenTransactionRepository>(() => _serviceProvider.GetRequiredService<ITokenTransactionRepository>());
+        _systemSettings = new Lazy<ISystemSettingRepository>(() => _serviceProvider.GetRequiredService<ISystemSettingRepository>());
     }
 
     // Repository properties - only created when accessed
@@ -41,8 +48,10 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     public IPermissionRepository Permissions => _permissions.Value;
     public IRefreshTokenRepository RefreshTokens => _refreshTokens.Value;
     public ITenantRepository Tenants => _tenants.Value;
-
-
+    public IErrorSolutionRepository ErrorSolutions => _errorSolutions.Value;
+    public IUserTokenBalanceRepository UserTokenBalances => _userTokenBalances.Value;
+    public ITokenTransactionRepository TokenTransactions => _tokenTransactions.Value;
+    public ISystemSettingRepository SystemSettings => _systemSettings.Value;
 
 
     /// <summary>

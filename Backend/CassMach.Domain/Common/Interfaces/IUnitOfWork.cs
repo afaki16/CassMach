@@ -15,6 +15,11 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     IPermissionRepository Permissions { get; }
     IRefreshTokenRepository RefreshTokens { get; }
     ITenantRepository Tenants { get; }
+    IErrorSolutionRepository ErrorSolutions { get; }
+    IUserTokenBalanceRepository UserTokenBalances { get; }
+    ITokenTransactionRepository TokenTransactions { get; }
+    ISystemSettingRepository SystemSettings { get; }
+
     // Core operations
     /// <summary>
     /// Save all changes made in this unit of work
