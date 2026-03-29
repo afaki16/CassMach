@@ -32,11 +32,11 @@
                 class="ml-3 text-[19px] font-bold text-gray-900 tracking-tight transition-opacity duration-300"
                 :class="{ 'opacity-0 hidden': !isSidebarOpen }"
               >
-                {{ appData?.app?.brand?.text || 'Kickstart' }}
+                {{ appData?.app?.brand?.text || 'CassMach' }}
               </span>
             </div>
           </template>
-          <span>{{ appData?.app?.brand?.text || 'Kickstart' }}</span>
+          <span>{{ appData?.app?.brand?.text || 'CassMach' }}</span>
         </v-tooltip>
         
         <button v-if="isSidebarOpen && !isMobile" @click.stop="toggleSidebar" class="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors focus:outline-none">

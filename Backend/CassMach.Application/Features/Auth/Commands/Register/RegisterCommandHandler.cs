@@ -1,0 +1,90 @@
+using CassMach.Application.Interfaces;
+using AutoMapper;
+using CassMach.Application.Features.Auth.Commands.Login;
+using CassMach.Application.Features.Auth.Commands.Logout;
+using CassMach.Application.Features.Auth.Commands.LogoutAll;
+using CassMach.Application.Features.Auth.Commands.LogoutDevice;
+using CassMach.Application.Features.Auth.Commands.Register;
+using CassMach.Application.Features.Auth.Commands.RefreshToken;
+using CassMach.Application.Features.Auth.Commands.RevokeSession;
+using CassMach.Application.Features.Auth.Commands.ChangePassword;
+using CassMach.Application.Features.Auth.Commands.ForgotPassword;
+using CassMach.Application.Features.Auth.Commands.ResetPassword;
+using CassMach.Domain.Common.Interfaces;
+using CassMach.Domain.Constants;
+using CassMach.Domain.Common.Interfaces.Repositories;
+using CassMach.Application.Common.Results;
+using CassMach.Domain.Entities;
+using CassMach.Domain.Common.Enums;
+using CassMach.Domain.Models;
+using CassMach.Application.Features.Users.Dtos;
+using CassMach.Application.Features.Roles.Dtos;
+using CassMach.Application.Features.Tenants.Dtos;
+using CassMach.Application.Features.Permissions.Dtos;
+using MediatR;
+using System.Threading;
+using System.Threading.Tasks;
+
+namespace CassMach.Application.Features.Auth.Commands.Register
+{
+    public class RegisterCommandHandler : IRequestHandler<RegisterCommand, Result<UserDto>>
+    {
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IPasswordService _passwordService;
+        private readonly IMapper _mapper;
+
+        public RegisterCommandHandler(IUnitOfWork unitOfWork, IPasswordService passwordService, IMapper mapper)
+        {
+            _unitOfWork = unitOfWork;
+            _passwordService = passwordService;
+            _mapper = mapper;
+        }
+
+        public async Task<Result<UserDto>> Handle(RegisterCommand request, CancellationToken cancellationToken)
+        {
+            // Public register: users without a tenant share one uniqueness scope (TenantId null)
+            if (await _unitOfWork.Users.EmailExistsAsync(request.Email, tenantId: null))
+             return Result<UserDto>.Failure(Error.Failure(
+                  ErrorCode.AlreadyExists,
+                  "Email already exists"));
+
+            if (!string.IsNullOrWhiteSpace(request.PhoneNumber) &&
+                await _unitOfWork.Users.PhoneExistsAsync(request.PhoneNumber, tenantId: null))
+                return Result<UserDto>.Failure(Error.Failure(
+                    ErrorCode.AlreadyExists,
+                    "Phone number already exists"));
+
+        // Hash password
+        var passwordResult = _passwordService.HashPassword(request.Password);
+            if (!passwordResult.IsSuccess)
+            return Result<UserDto>.Failure(Error.Failure(
+            ErrorCode.AlreadyExists,
+            $"{passwordResult.Error}"));
+
+        // Create user
+        var user = new User
+            {
+                FirstName = request.FirstName,
+                LastName = request.LastName,
+                Email = request.Email,
+                PasswordHash = passwordResult.Value,
+                PhoneNumber = request.PhoneNumber,
+                Status = UserStatus.Active,
+                EmailConfirmed = false
+            };
+
+            // Assign default User role
+            var userRole = await _unitOfWork.Roles.GetByNameAsync(RoleNames.User);
+            if (userRole != null)
+            {
+                user.UserRoles.Add(new UserRole { RoleId = userRole.Id });
+            }
+
+            await _unitOfWork.Users.AddAsync(user);
+            await _unitOfWork.SaveChangesAsync();
+
+            var userDto = _mapper.Map<UserDto>(user);
+            return Result<UserDto>.Success(userDto);
+        }
+    }
+} 

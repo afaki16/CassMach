@@ -68,7 +68,7 @@ definePageMeta({
 })
 
 useHead({
-  title: 'Ayarlar - Kickstart',
+  title: 'Ayarlar - CassMach',
 })
 //#endregion
 

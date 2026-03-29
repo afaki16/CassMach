@@ -1,6 +1,6 @@
-# Kickstart Frontend - Yeni Sayfa Oluşturma Rehberi
+# CassMach Frontend - Yeni Sayfa Oluşturma Rehberi
 
-Bu rehber, Kickstart Frontend projesinde yeni bir CRUD sayfa oluşturmak için izlenmesi gereken adımları detaylı şekilde açıklar. Users, Roles ve Tenants sayfaları referans alınmıştır.
+Bu rehber, CassMach Frontend projesinde yeni bir CRUD sayfa oluşturmak için izlenmesi gereken adımları detaylı şekilde açıklar. Users, Roles ve Tenants sayfaları referans alınmıştır.
 
 ---
 

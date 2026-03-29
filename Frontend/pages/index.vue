@@ -40,9 +40,9 @@ onMounted(async () => {
 })
 
 useHead({
-  title: 'Kickstart - Authentication System',
+  title: 'CassMach - Authentication System',
   meta: [
-    { name: 'description', content: 'Sign in to your Kickstart account' }
+    { name: 'description', content: 'Sign in to your CassMach account' }
   ]
 })
 </script>

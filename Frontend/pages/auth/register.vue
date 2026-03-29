@@ -174,9 +174,9 @@ onUnmounted(() => {
 
 // SEO
 useHead({
-  title: 'Create Account - Kickstart',
+  title: 'Create Account - CassMach',
   meta: [
-    { name: 'description', content: 'Create your Kickstart account' }
+    { name: 'description', content: 'Create your CassMach account' }
   ]
 })
 </script>

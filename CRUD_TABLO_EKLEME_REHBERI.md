@@ -25,13 +25,13 @@ Proje **Clean Architecture** ve **CQRS Pattern** (MediatR) kullanmaktadır. Katm
 
 ## 1️⃣ DOMAIN KATMANI - Entity Oluşturma
 
-**Dosya:** `Kickstart.Domain/Entities/Product.cs` (veya proje adına göre)
+**Dosya:** `CassMach.Domain/Entities/Product.cs` (veya proje adına göre)
 
 ```csharp
-using Kickstart.Domain.Common;
+using CassMach.Domain.Common;
 using System;
 
-namespace Kickstart.Domain.Entities
+namespace CassMach.Domain.Entities
 {
     public class Product : BaseAuditableEntity
     {
@@ -57,14 +57,14 @@ namespace Kickstart.Domain.Entities
 
 ## 2️⃣ DOMAIN KATMANI - Repository Interface
 
-**Dosya:** `Kickstart.Domain/Common/Interfaces/Repositories/IProductRepository.cs`
+**Dosya:** `CassMach.Domain/Common/Interfaces/Repositories/IProductRepository.cs`
 
 ```csharp
-using Kickstart.Domain.Entities;
+using CassMach.Domain.Entities;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace Kickstart.Domain.Common.Interfaces.Repositories
+namespace CassMach.Domain.Common.Interfaces.Repositories
 {
     public interface IProductRepository : IRepository<Product, int>
     {
@@ -84,7 +84,7 @@ namespace Kickstart.Domain.Common.Interfaces.Repositories
 
 **ÖNEMLİ:** Yeni sayfa için yetkilendirme (authorization) çalışsın diye Permission sabitlerini eklemelisin.
 
-**Dosya:** `Kickstart.Domain/Constants/Permissions.cs`
+**Dosya:** `CassMach.Domain/Constants/Permissions.cs`
 
 ```csharp
 // Products permissions (yeni resource için ekle)
@@ -100,20 +100,20 @@ public static class Products
 **Notlar:**
 - `AddResourcePermissionPolicies` otomatik olarak `GetAllPermissions()` ile tüm permission'ları alır → `products.read`, `products.create` vb. policy'ler otomatik oluşur
 - `SeedData.SeedPermissionsAsync` uygulama başlarken çalışır → Yeni permission'lar veritabanına otomatik eklenir
-- **İsteğe bağlı:** `readwrite` veya `fullaccess` policy kullanacaksan, `Kickstart.API/Extensions/ServiceCollectionExtensions.cs` içindeki `AddCombinedPermissionPolicies` metodunda `readWriteResources` ve `fullAccessResources` dizilerine yeni resource adını ekle (örn: `"Products"`)
+- **İsteğe bağlı:** `readwrite` veya `fullaccess` policy kullanacaksan, `CassMach.API/Extensions/ServiceCollectionExtensions.cs` içindeki `AddCombinedPermissionPolicies` metodunda `readWriteResources` ve `fullAccessResources` dizilerine yeni resource adını ekle (örn: `"Products"`)
 
 ---
 
 ## 3️⃣ INFRASTRUCTURE KATMANI - Entity Configuration
 
-**Dosya:** `Kickstart.Infrastructure/Persistence/EntityConfigurations/ProductConfiguration.cs`
+**Dosya:** `CassMach.Infrastructure/Persistence/EntityConfigurations/ProductConfiguration.cs`
 
 ```csharp
-using Kickstart.Domain.Entities;
+using CassMach.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Kickstart.Infrastructure.Persistence.EntityConfigurations
+namespace CassMach.Infrastructure.Persistence.EntityConfigurations
 {
     public class ProductConfiguration : IEntityTypeConfiguration<Product>
     {
@@ -162,19 +162,19 @@ namespace Kickstart.Infrastructure.Persistence.EntityConfigurations
 
 ## 4️⃣ INFRASTRUCTURE KATMANI - Repository Implementasyonu
 
-**Dosya:** `Kickstart.Infrastructure/Repositories/ProductRepository.cs`
+**Dosya:** `CassMach.Infrastructure/Repositories/ProductRepository.cs`
 
 ```csharp
-using Kickstart.Domain.Common.Interfaces.Repositories;
-using Kickstart.Domain.Entities;
-using Kickstart.Infrastructure.Persistence;
+using CassMach.Domain.Common.Interfaces.Repositories;
+using CassMach.Domain.Entities;
+using CassMach.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Kickstart.Infrastructure.Repositories
+namespace CassMach.Infrastructure.Repositories
 {
     public class ProductRepository : RepositoryBase<Product, int>, IProductRepository
     {
@@ -237,7 +237,7 @@ namespace Kickstart.Infrastructure.Repositories
 
 ## 5️⃣ INFRASTRUCTURE KATMANI - DbContext'e Ekleme
 
-**Dosya:** `Kickstart.Infrastructure/Persistence/ApplicationDbContext.cs`
+**Dosya:** `CassMach.Infrastructure/Persistence/ApplicationDbContext.cs`
 
 ```csharp
 // DbSet'leri ekleyin
@@ -248,14 +248,14 @@ public DbSet<Product> Products { get; set; }
 
 ## 6️⃣ INFRASTRUCTURE KATMANI - UnitOfWork'e Ekleme
 
-**Dosya:** `Kickstart.Domain/Common/Interfaces/IUnitOfWork.cs`
+**Dosya:** `CassMach.Domain/Common/Interfaces/IUnitOfWork.cs`
 
 ```csharp
 // Property ekleyin
 IProductRepository Products { get; }
 ```
 
-**Dosya:** `Kickstart.Infrastructure/Persistence/UnitOfWork.cs`
+**Dosya:** `CassMach.Infrastructure/Persistence/UnitOfWork.cs`
 
 ```csharp
 // Lazy field ekleyin
@@ -273,12 +273,12 @@ public IProductRepository Products => _products.Value;
 ## 7️⃣ APPLICATION KATMANI - DTOs
 
 ### ProductDto.cs
-**Dosya:** `Kickstart.Application/Features/Products/Dtos/ProductDto.cs`
+**Dosya:** `CassMach.Application/Features/Products/Dtos/ProductDto.cs`
 
 ```csharp
 using System;
 
-namespace Kickstart.Application.Features.Products.Dtos
+namespace CassMach.Application.Features.Products.Dtos
 {
     public class ProductDto
     {
@@ -294,10 +294,10 @@ namespace Kickstart.Application.Features.Products.Dtos
 ```
 
 ### ProductListDto.cs
-**Dosya:** `Kickstart.Application/Features/Products/Dtos/ProductListDto.cs`
+**Dosya:** `CassMach.Application/Features/Products/Dtos/ProductListDto.cs`
 
 ```csharp
-namespace Kickstart.Application.Features.Products.Dtos
+namespace CassMach.Application.Features.Products.Dtos
 {
     public class ProductListDto
     {
@@ -311,10 +311,10 @@ namespace Kickstart.Application.Features.Products.Dtos
 ```
 
 ### CreateProductDto.cs
-**Dosya:** `Kickstart.Application/Features/Products/Dtos/CreateProductDto.cs`
+**Dosya:** `CassMach.Application/Features/Products/Dtos/CreateProductDto.cs`
 
 ```csharp
-namespace Kickstart.Application.Features.Products.Dtos
+namespace CassMach.Application.Features.Products.Dtos
 {
     public class CreateProductDto
     {
@@ -328,10 +328,10 @@ namespace Kickstart.Application.Features.Products.Dtos
 ```
 
 ### UpdateProductDto.cs
-**Dosya:** `Kickstart.Application/Features/Products/Dtos/UpdateProductDto.cs`
+**Dosya:** `CassMach.Application/Features/Products/Dtos/UpdateProductDto.cs`
 
 ```csharp
-namespace Kickstart.Application.Features.Products.Dtos
+namespace CassMach.Application.Features.Products.Dtos
 {
     public class UpdateProductDto
     {
@@ -349,14 +349,14 @@ namespace Kickstart.Application.Features.Products.Dtos
 ## 8️⃣ APPLICATION KATMANI - Commands
 
 ### CreateProductCommand
-**Dosya:** `Kickstart.Application/Features/Products/Commands/CreateProduct/CreateProductCommand.cs`
+**Dosya:** `CassMach.Application/Features/Products/Commands/CreateProduct/CreateProductCommand.cs`
 
 ```csharp
-using Kickstart.Application.Common.Results;
-using Kickstart.Application.Features.Products.Dtos;
+using CassMach.Application.Common.Results;
+using CassMach.Application.Features.Products.Dtos;
 using MediatR;
 
-namespace Kickstart.Application.Features.Products.Commands
+namespace CassMach.Application.Features.Products.Commands
 {
     public class CreateProductCommand : IRequest<Result<ProductListDto>>
     {
@@ -369,21 +369,21 @@ namespace Kickstart.Application.Features.Products.Commands
 }
 ```
 
-**Dosya:** `Kickstart.Application/Features/Products/Commands/CreateProduct/CreateProductCommandHandler.cs`
+**Dosya:** `CassMach.Application/Features/Products/Commands/CreateProduct/CreateProductCommandHandler.cs`
 
 ```csharp
 using AutoMapper;
-using Kickstart.Application.Features.Products.Commands;
-using Kickstart.Application.Features.Products.Dtos;
-using Kickstart.Domain.Common.Interfaces;
-using Kickstart.Application.Common.Results;
-using Kickstart.Domain.Entities;
-using Kickstart.Domain.Models;
+using CassMach.Application.Features.Products.Commands;
+using CassMach.Application.Features.Products.Dtos;
+using CassMach.Domain.Common.Interfaces;
+using CassMach.Application.Common.Results;
+using CassMach.Domain.Entities;
+using CassMach.Domain.Models;
 using MediatR;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kickstart.Application.Features.Products.Handlers
+namespace CassMach.Application.Features.Products.Handlers
 {
     public class CreateProductCommandHandler : IRequestHandler<CreateProductCommand, Result<ProductListDto>>
     {
@@ -426,13 +426,13 @@ namespace Kickstart.Application.Features.Products.Handlers
 }
 ```
 
-**Dosya:** `Kickstart.Application/Features/Products/Commands/CreateProduct/CreateProductCommandValidator.cs`
+**Dosya:** `CassMach.Application/Features/Products/Commands/CreateProduct/CreateProductCommandValidator.cs`
 
 ```csharp
 using FluentValidation;
-using Kickstart.Application.Features.Products.Commands;
+using CassMach.Application.Features.Products.Commands;
 
-namespace Kickstart.Application.Features.Products.Validators
+namespace CassMach.Application.Features.Products.Validators
 {
     public class CreateProductCommandValidator : AbstractValidator<CreateProductCommand>
     {
@@ -456,14 +456,14 @@ namespace Kickstart.Application.Features.Products.Validators
 ```
 
 ### UpdateProductCommand
-**Dosya:** `Kickstart.Application/Features/Products/Commands/UpdateProduct/UpdateProductCommand.cs`
+**Dosya:** `CassMach.Application/Features/Products/Commands/UpdateProduct/UpdateProductCommand.cs`
 
 ```csharp
-using Kickstart.Application.Common.Results;
-using Kickstart.Application.Features.Products.Dtos;
+using CassMach.Application.Common.Results;
+using CassMach.Application.Features.Products.Dtos;
 using MediatR;
 
-namespace Kickstart.Application.Features.Products.Commands
+namespace CassMach.Application.Features.Products.Commands
 {
     public class UpdateProductCommand : IRequest<Result<ProductListDto>>
     {
@@ -477,20 +477,20 @@ namespace Kickstart.Application.Features.Products.Commands
 }
 ```
 
-**Dosya:** `Kickstart.Application/Features/Products/Commands/UpdateProduct/UpdateProductCommandHandler.cs`
+**Dosya:** `CassMach.Application/Features/Products/Commands/UpdateProduct/UpdateProductCommandHandler.cs`
 
 ```csharp
 using AutoMapper;
-using Kickstart.Application.Features.Products.Commands;
-using Kickstart.Application.Features.Products.Dtos;
-using Kickstart.Domain.Common.Interfaces;
-using Kickstart.Application.Common.Results;
-using Kickstart.Domain.Models;
+using CassMach.Application.Features.Products.Commands;
+using CassMach.Application.Features.Products.Dtos;
+using CassMach.Domain.Common.Interfaces;
+using CassMach.Application.Common.Results;
+using CassMach.Domain.Models;
 using MediatR;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kickstart.Application.Features.Products.Handlers
+namespace CassMach.Application.Features.Products.Handlers
 {
     public class UpdateProductCommandHandler : IRequestHandler<UpdateProductCommand, Result<ProductListDto>>
     {
@@ -538,13 +538,13 @@ namespace Kickstart.Application.Features.Products.Handlers
 }
 ```
 
-**Dosya:** `Kickstart.Application/Features/Products/Commands/UpdateProduct/UpdateProductCommandValidator.cs`
+**Dosya:** `CassMach.Application/Features/Products/Commands/UpdateProduct/UpdateProductCommandValidator.cs`
 
 ```csharp
 using FluentValidation;
-using Kickstart.Application.Features.Products.Commands;
+using CassMach.Application.Features.Products.Commands;
 
-namespace Kickstart.Application.Features.Products.Validators
+namespace CassMach.Application.Features.Products.Validators
 {
     public class UpdateProductCommandValidator : AbstractValidator<UpdateProductCommand>
     {
@@ -571,13 +571,13 @@ namespace Kickstart.Application.Features.Products.Validators
 ```
 
 ### DeleteProductCommand
-**Dosya:** `Kickstart.Application/Features/Products/Commands/DeleteProduct/DeleteProductCommand.cs`
+**Dosya:** `CassMach.Application/Features/Products/Commands/DeleteProduct/DeleteProductCommand.cs`
 
 ```csharp
-using Kickstart.Application.Common.Results;
+using CassMach.Application.Common.Results;
 using MediatR;
 
-namespace Kickstart.Application.Features.Products.Commands
+namespace CassMach.Application.Features.Products.Commands
 {
     public class DeleteProductCommand : IRequest<Result<bool>>
     {
@@ -586,18 +586,18 @@ namespace Kickstart.Application.Features.Products.Commands
 }
 ```
 
-**Dosya:** `Kickstart.Application/Features/Products/Commands/DeleteProduct/DeleteProductCommandHandler.cs`
+**Dosya:** `CassMach.Application/Features/Products/Commands/DeleteProduct/DeleteProductCommandHandler.cs`
 
 ```csharp
-using Kickstart.Application.Features.Products.Commands;
-using Kickstart.Domain.Common.Interfaces;
-using Kickstart.Application.Common.Results;
-using Kickstart.Domain.Models;
+using CassMach.Application.Features.Products.Commands;
+using CassMach.Domain.Common.Interfaces;
+using CassMach.Application.Common.Results;
+using CassMach.Domain.Models;
 using MediatR;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kickstart.Application.Features.Products.Handlers
+namespace CassMach.Application.Features.Products.Handlers
 {
     public class DeleteProductCommandHandler : IRequestHandler<DeleteProductCommand, Result<bool>>
     {
@@ -634,14 +634,14 @@ namespace Kickstart.Application.Features.Products.Handlers
 ## 9️⃣ APPLICATION KATMANI - Queries
 
 ### GetAllProductsQuery
-**Dosya:** `Kickstart.Application/Features/Products/Queries/GetAllProducts/GetAllProductsQuery.cs`
+**Dosya:** `CassMach.Application/Features/Products/Queries/GetAllProducts/GetAllProductsQuery.cs`
 
 ```csharp
-using Kickstart.Application.Common.Results;
-using Kickstart.Application.Features.Products.Dtos;
+using CassMach.Application.Common.Results;
+using CassMach.Application.Features.Products.Dtos;
 using MediatR;
 
-namespace Kickstart.Application.Features.Products.Queries.GetAllProducts
+namespace CassMach.Application.Features.Products.Queries.GetAllProducts
 {
     public class GetAllProductsQuery : IRequest<PagedResult<ProductListDto>>
     {
@@ -652,20 +652,20 @@ namespace Kickstart.Application.Features.Products.Queries.GetAllProducts
 }
 ```
 
-**Dosya:** `Kickstart.Application/Features/Products/Queries/GetAllProducts/GetAllProductsQueryHandler.cs`
+**Dosya:** `CassMach.Application/Features/Products/Queries/GetAllProducts/GetAllProductsQueryHandler.cs`
 
 ```csharp
 using AutoMapper;
-using Kickstart.Application.Features.Products.Dtos;
-using Kickstart.Application.Features.Products.Queries.GetAllProducts;
-using Kickstart.Domain.Common.Interfaces;
-using Kickstart.Application.Common.Results;
+using CassMach.Application.Features.Products.Dtos;
+using CassMach.Application.Features.Products.Queries.GetAllProducts;
+using CassMach.Domain.Common.Interfaces;
+using CassMach.Application.Common.Results;
 using MediatR;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kickstart.Application.Features.Products.Queries.GetAllProducts
+namespace CassMach.Application.Features.Products.Queries.GetAllProducts
 {
     public class GetAllProductsQueryHandler : IRequestHandler<GetAllProductsQuery, PagedResult<ProductListDto>>
     {
@@ -691,14 +691,14 @@ namespace Kickstart.Application.Features.Products.Queries.GetAllProducts
 ```
 
 ### GetProductByIdQuery
-**Dosya:** `Kickstart.Application/Features/Products/Queries/GetProductById/GetProductByIdQuery.cs`
+**Dosya:** `CassMach.Application/Features/Products/Queries/GetProductById/GetProductByIdQuery.cs`
 
 ```csharp
-using Kickstart.Application.Common.Results;
-using Kickstart.Application.Features.Products.Dtos;
+using CassMach.Application.Common.Results;
+using CassMach.Application.Features.Products.Dtos;
 using MediatR;
 
-namespace Kickstart.Application.Features.Products.Queries
+namespace CassMach.Application.Features.Products.Queries
 {
     public class GetProductByIdQuery : IRequest<Result<ProductDto>>
     {
@@ -707,20 +707,20 @@ namespace Kickstart.Application.Features.Products.Queries
 }
 ```
 
-**Dosya:** `Kickstart.Application/Features/Products/Queries/GetProductById/GetProductByIdQueryHandler.cs`
+**Dosya:** `CassMach.Application/Features/Products/Queries/GetProductById/GetProductByIdQueryHandler.cs`
 
 ```csharp
 using AutoMapper;
-using Kickstart.Application.Features.Products.Dtos;
-using Kickstart.Application.Features.Products.Queries;
-using Kickstart.Domain.Common.Interfaces;
-using Kickstart.Application.Common.Results;
-using Kickstart.Domain.Models;
+using CassMach.Application.Features.Products.Dtos;
+using CassMach.Application.Features.Products.Queries;
+using CassMach.Domain.Common.Interfaces;
+using CassMach.Application.Common.Results;
+using CassMach.Domain.Models;
 using MediatR;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kickstart.Application.Features.Products.Handlers
+namespace CassMach.Application.Features.Products.Handlers
 {
     public class GetProductByIdQueryHandler : IRequestHandler<GetProductByIdQuery, Result<ProductDto>>
     {
@@ -755,7 +755,7 @@ namespace Kickstart.Application.Features.Products.Handlers
 
 ## 🔟 APPLICATION KATMANI - AutoMapper Mapping
 
-**Dosya:** `Kickstart.Application/Features/Mappings/MappingProfile.cs`
+**Dosya:** `CassMach.Application/Features/Mappings/MappingProfile.cs`
 
 ```csharp
 // MappingProfile constructor'ına ekleyin:
@@ -781,21 +781,21 @@ CreateMap<UpdateProductDto, Product>();
 
 ## 1️⃣1️⃣ API KATMANI - Controller
 
-**Dosya:** `Kickstart.API/Controllers/ProductsController.cs`
+**Dosya:** `CassMach.API/Controllers/ProductsController.cs`
 
 ```csharp
-using Kickstart.API.Controllers;
-using Kickstart.Application.Common.Results;
-using Kickstart.Application.Features.Products.Commands;
-using Kickstart.Application.Features.Products.Dtos;
-using Kickstart.Application.Features.Products.Queries.GetAllProducts;
-using Kickstart.Application.Features.Products.Queries;
+using CassMach.API.Controllers;
+using CassMach.Application.Common.Results;
+using CassMach.Application.Features.Products.Commands;
+using CassMach.Application.Features.Products.Dtos;
+using CassMach.Application.Features.Products.Queries.GetAllProducts;
+using CassMach.Application.Features.Products.Queries;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
-namespace Kickstart.API.Controllers
+namespace CassMach.API.Controllers
 {
     [Authorize]
     [ApiController]
@@ -916,10 +916,10 @@ Terminal'de şu komutları çalıştırın:
 
 ```bash
 # Migration oluştur
-dotnet ef migrations add AddProductTable --project Kickstart.Infrastructure --startup-project Kickstart.API
+dotnet ef migrations add AddProductTable --project CassMach.Infrastructure --startup-project CassMach.API
 
 # Database'e uygula
-dotnet ef database update --project Kickstart.Infrastructure --startup-project Kickstart.API
+dotnet ef database update --project CassMach.Infrastructure --startup-project CassMach.API
 ```
 
 ---

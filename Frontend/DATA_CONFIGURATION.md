@@ -21,17 +21,17 @@ gibi öğeleri kolayca özelleştirebilirsiniz.
 ```json
 {
   "app": {
-    "name": "Kickstart",
+    "name": "CassMach",
     "version": "1.0.0",
     "description": "Modern Authentication System",
     "logo": {
       "src": "/images/logo.svg",
-      "alt": "Kickstart Logo",
+      "alt": "CassMach Logo",
       "width": "32",
       "height": "32"
     },
     "brand": {
-      "text": "Kickstart",
+      "text": "CassMach",
       "tagline": "Secure Authentication System"
     }
   }

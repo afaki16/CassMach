@@ -114,7 +114,7 @@ onMounted(() => {
 })
 
 useHead({
-  title: 'Dashboard - Kickstart'
+  title: 'Dashboard - CassMach'
 })
 </script>
 

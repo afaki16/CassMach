@@ -148,7 +148,7 @@ const error = ref<string | null>(null)
 export const useAppData = () => {
 
   /**
-   * App data yükler (public/data.json).
+   * App data yï¿½kler (public/data.json).
    */
   const loadAppData = async (forceReload = false) => {
     if (appData.value && !forceReload) {
@@ -218,7 +218,7 @@ export const useAppData = () => {
   const getUIConfig = computed(() => appData.value?.ui || null)
 
   const getLogo = computed(() => appData.value?.app.logo || null)
-  const getBrandText = computed(() => appData.value?.app.brand.text || 'Kickstart')
+  const getBrandText = computed(() => appData.value?.app.brand.text || 'CassMach')
   const getBackgroundImages = computed(() => appData.value?.login.backgroundImages || appData.value?.register.backgroundImages || [])
   const getThemeColors = computed(() => appData.value?.theme.colors || null)
 

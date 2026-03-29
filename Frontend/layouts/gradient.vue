@@ -15,7 +15,7 @@
             :style="{ height: '34px', width: 'auto' }"
             :alt="appData?.app?.logo?.alt || 'Logo'" 
           />
-          <span class="brand-text truncate">{{ appData?.app?.brand?.text || 'Kickstart' }}</span>
+          <span class="brand-text truncate">{{ appData?.app?.brand?.text || 'CassMach' }}</span>
         </div>
         <button 
           @click="toggleSidebar" 
@@ -83,7 +83,7 @@
           </div>
           <div v-if="isSidebarOpen" class="flex-1 min-w-0 text-left">
             <div class="text-sm font-semibold text-white truncate">{{ userInfo.name || 'Kullanıcı Adı' }}</div>
-            <div class="text-xs text-white/60 truncate">{{ userInfo.email || 'admin@kickstart.com' }}</div>
+            <div class="text-xs text-white/60 truncate">{{ userInfo.email || 'admin@cassmach.com' }}</div>
           </div>
           <svg v-if="isSidebarOpen" class="w-4 h-4 text-white/60 transition-transform duration-200" :class="{ 'rotate-180': showUserMenu }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7"></path>
