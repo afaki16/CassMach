@@ -66,6 +66,7 @@ export const API_ENDPOINTS = {
     ASK: '/api/errors/ask',
     RETRY: (conversationId: string) => `/api/errors/${conversationId}/retry`,
     ACCEPT: (conversationId: string) => `/api/errors/${conversationId}/accept`,
+    CONVERSATION: (conversationId: string) => `/api/errors/${conversationId}`,
     HISTORY: '/api/errors/history',
     BALANCE: '/api/errors/balance'
   },

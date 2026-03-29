@@ -31,9 +31,17 @@ Kullanıcının metninden şu bilgileri çıkar ve SADECE JSON dön, başka hiç
   ""is_valid"": true veya false
 }
 
-Geçerli konular: makine, PLC, CNC, robot, üretim hattı, hidrolik, pnömatik, servo motor, elektrik panosu, kompresör, konveyör ve benzeri endüstriyel sistemler.
+ÖNEMLİ KURALLAR:
+- is_valid alanı SADECE konunun endüstriyel/makine ile ilgili olup olmadığını belirler.
+- Kullanıcı ""makine"", ""tezgah"", ""CNC"", ""motor"", ""ışık yanıyor"", ""alarm veriyor"", ""hata kodu"" gibi endüstriyel terimler kullandıysa is_valid MUTLAKA true olmalıdır.
+- Marka belirtilmemiş olması is_valid değerini ETKİLEMEZ. Marka yoksa brand=null yap ama is_valid=true kalsın.
+- Hata kodu belirtilmemiş olması is_valid değerini ETKİLEMEZ. Kod yoksa error_code=null yap ama is_valid=true kalsın.
 
-Geçersiz konular: yazılım, web, telefon, bilgisayar, günlük yaşam, sağlık veya endüstri dışı her şey.";
+Geçerli konular: makine, PLC, CNC, robot, üretim hattı, hidrolik, pnömatik, servo motor, elektrik panosu, kompresör, konveyör, tezgah, torna, freze ve benzeri endüstriyel sistemler.
+
+Geçersiz konular (is_valid=false): yazılım, web, telefon, bilgisayar, günlük yaşam, sağlık veya endüstri dışı her şey.
+
+Eğer kullanıcı makine markası belirtmediyse brand alanını null olarak dön. Marka bilgisi olmadan çözüm üretilemez.";
 
         private const string SOLUTION_SYSTEM_PROMPT = @"Sen bir endüstriyel makine hata kodu uzmanısın.
 Kullanıcının dilinde cevap ver.
@@ -80,11 +88,23 @@ Güvenlik uyarılarını mutlaka belirt.";
                 };
 
                 var message = await _client.Messages.Create(parameters, cancellationToken: cancellationToken);
-                var responseText = message.ToString();
+                var fullResponse = message.ToString();
+
+                var textContent = ExtractTextContent(fullResponse);
+
+                var jsonText = textContent.Trim();
+                jsonText = System.Text.RegularExpressions.Regex.Replace(jsonText, @"^```(?:json)?\s*", "");
+                jsonText = System.Text.RegularExpressions.Regex.Replace(jsonText, @"\s*```$", "");
+                jsonText = jsonText.Trim();
+
+                var jsonStart = jsonText.IndexOf('{');
+                var jsonEnd = jsonText.LastIndexOf('}');
+                if (jsonStart >= 0 && jsonEnd > jsonStart)
+                    jsonText = jsonText.Substring(jsonStart, jsonEnd - jsonStart + 1);
 
                 try
                 {
-                    var parsed = JsonSerializer.Deserialize<JsonElement>(responseText);
+                    var parsed = JsonSerializer.Deserialize<JsonElement>(jsonText);
                     return new ParseResult
                     {
                         Brand = parsed.TryGetProperty("brand", out var brand) && brand.ValueKind != JsonValueKind.Null
@@ -100,7 +120,7 @@ Güvenlik uyarılarını mutlaka belirt.";
                 }
                 catch (JsonException)
                 {
-                    _logger.LogWarning("Failed to parse Claude response as JSON: {Response}", responseText);
+                    _logger.LogWarning("Failed to parse Claude response as JSON: {Response}", textContent);
                     return new ParseResult { IsValid = false };
                 }
             }
@@ -230,6 +250,31 @@ Güvenlik uyarılarını mutlaka belirt.";
             }
 
             return sb.ToString();
+        }
+
+        private static string ExtractTextContent(string fullResponse)
+        {
+            try
+            {
+                var doc = JsonSerializer.Deserialize<JsonElement>(fullResponse);
+                if (doc.TryGetProperty("content", out var content) && content.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var block in content.EnumerateArray())
+                    {
+                        if (block.TryGetProperty("type", out var blockType) &&
+                            blockType.GetString() == "text" &&
+                            block.TryGetProperty("text", out var text))
+                        {
+                            return text.GetString() ?? "";
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // fallback: not a JSON envelope, treat as raw text
+            }
+            return fullResponse;
         }
     }
 }

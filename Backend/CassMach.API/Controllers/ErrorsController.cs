@@ -1,6 +1,7 @@
 using CassMach.Application.Common.Interfaces;
 using CassMach.Application.Features.Errors.Commands.AcceptSolution;
 using CassMach.Application.Features.Errors.Dtos;
+using CassMach.Application.Features.Errors.Queries.GetConversation;
 using CassMach.Application.Features.Errors.Queries.GetErrorHistory;
 using CassMach.Application.Features.Errors.Queries.GetTokenBalance;
 using CassMach.Domain.Common.Interfaces;
@@ -20,7 +21,6 @@ namespace CassMach.API.Controllers
         private readonly IClaudeService _claudeService;
         private readonly ITokenService _tokenService;
         private readonly IUnitOfWork _unitOfWork;
-
         public ErrorsController(
             IMediator mediator,
             IClaudeService claudeService,
@@ -57,6 +57,12 @@ namespace CassMach.API.Controllers
                 if (!parseResult.IsValid)
                 {
                     await WriteSSEEvent(new { type = "error", message = "Bu soru makine hatası ile ilgili değil. Sadece endüstriyel makine hatalarına cevap verebilirim." });
+                    return;
+                }
+
+                if (string.IsNullOrWhiteSpace(parseResult.Brand))
+                {
+                    await WriteSSEEvent(new { type = "error", message = "Lütfen makine markasını belirtin. Örnek: 'Fanuc alarm 414' veya 'Siemens CNC'de kırmızı ışık yanıyor'" });
                     return;
                 }
 
@@ -291,6 +297,19 @@ namespace CassMach.API.Controllers
             };
             var result = await _mediator.Send(query);
             return HandlePagedResult(result);
+        }
+
+        [HttpGet("{conversationId:guid}")]
+        [Authorize(Policy = "errors.read")]
+        public async Task<IActionResult> GetConversation(Guid conversationId)
+        {
+            var query = new GetConversationQuery
+            {
+                ConversationId = conversationId,
+                UserId = GetCurrentUserId()
+            };
+            var result = await _mediator.Send(query);
+            return HandleResult(result);
         }
 
         [HttpGet("balance")]
