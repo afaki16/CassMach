@@ -188,16 +188,6 @@
 
     <!-- Chat Messages Area -->
     <section v-if="messages.length > 0" class="chat-section">
-      <div class="chat-toolbar">
-        <button class="chat-toolbar-btn" @click="goBackToHistory">
-          <v-icon size="16">mdi-arrow-left</v-icon>
-          Geçmişe Dön
-        </button>
-        <button class="chat-toolbar-btn chat-toolbar-btn--new" @click="startNewConversation">
-          <v-icon size="16">mdi-plus</v-icon>
-          Yeni Soru
-        </button>
-      </div>
       <div ref="chatContainerRef" class="chat-messages">
         <div
           v-for="(msg, index) in messages"
@@ -233,25 +223,43 @@
                   prepend-icon="mdi-check-circle"
                 >Kabul Edildi</v-chip>
               </div>
-              <div v-if="!msg.meta.isHistory" class="done-actions">
-                <button
-                  v-if="msg.meta.remainingRetries > 0"
-                  class="action-btn action-btn--retry"
-                  @click="handleRetry(msg.meta.conversationId)"
-                  :disabled="isLoading"
-                >
-                  <v-icon size="16">mdi-refresh</v-icon>
-                  Tekrar Dene
-                </button>
-                <button
-                  class="action-btn action-btn--accept"
-                  @click="handleAccept(msg.meta.conversationId, msg.meta.attempt)"
-                  :disabled="isLoading"
-                >
-                  <v-icon size="16">mdi-check</v-icon>
-                  Kabul Et
-                </button>
-              </div>
+              <template v-if="!msg.meta.isHistory">
+                <div v-if="msg.meta.remainingRetries > 0" class="done-info-text">
+                  Bu çözüm işinize yaradı mı? Kabul edebilir veya farklı bir çözüm deneyebilirsiniz.
+                </div>
+                <div v-else class="done-info-text done-info-text--warning">
+                  <v-icon size="16" color="#b45309">mdi-alert-circle-outline</v-icon>
+                  Maksimum deneme hakkınız doldu. Çözüm işinize yaradıysa kabul edin, aksi halde destek talebi oluşturabilirsiniz.
+                </div>
+                <div class="done-actions">
+                  <button
+                    v-if="msg.meta.remainingRetries > 0"
+                    class="action-btn action-btn--retry"
+                    @click="handleRetry(msg.meta.conversationId)"
+                    :disabled="isLoading"
+                  >
+                    <v-icon size="16">mdi-refresh</v-icon>
+                    Tekrar Dene
+                  </button>
+                  <button
+                    v-if="msg.meta.remainingRetries <= 0"
+                    class="action-btn action-btn--not-satisfied"
+                    @click="handleNotSatisfied(msg.meta.conversationId)"
+                    :disabled="isLoading"
+                  >
+                    <v-icon size="16">mdi-emoticon-sad-outline</v-icon>
+                    Yeterli Olmadı
+                  </button>
+                  <button
+                    class="action-btn action-btn--accept"
+                    @click="handleAccept(msg.meta.conversationId, msg.meta.attempt)"
+                    :disabled="isLoading"
+                  >
+                    <v-icon size="16">mdi-check</v-icon>
+                    Kabul Et
+                  </button>
+                </div>
+              </template>
             </div>
           </div>
 
@@ -728,6 +736,12 @@ const handleRetry = async (conversationId: string) => {
   }
 }
 
+const handleNotSatisfied = async (conversationId: string) => {
+  snackbarText.value = 'Geri bildiriminiz kaydedildi. Destek ekibimiz sizinle iletişime geçecektir.'
+  snackbarColor.value = 'warning'
+  showSnackbar.value = true
+}
+
 const handleAccept = async (conversationId: string, attemptNumber: number) => {
   try {
     await patch(API_ENDPOINTS.ERRORS.ACCEPT(conversationId), { attemptNumber })
@@ -937,49 +951,6 @@ useHead({ title: 'Hata Asistanı - CassMach' })
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
 }
 
-/* Chat Toolbar */
-.chat-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  position: relative;
-  z-index: 1;
-  margin-bottom: 8px;
-}
-
-.chat-toolbar-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 14px;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: #475569;
-  cursor: pointer;
-  font-family: inherit;
-  transition: all 0.2s;
-}
-
-.chat-toolbar-btn:hover {
-  background: #f1f5f9;
-  border-color: #94a3b8;
-}
-
-.chat-toolbar-btn--new {
-  background: linear-gradient(180deg, #0f172a 0%, #334155 100%);
-  border-color: transparent;
-  color: white;
-}
-
-.chat-toolbar-btn--new:hover {
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.3);
-  transform: translateY(-1px);
-}
-
 /* Chat Section */
 .chat-section {
   position: relative;
@@ -1187,11 +1158,34 @@ useHead({ title: 'Hata Asistanı - CassMach' })
 }
 
 .done-msg {
-  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 20px;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.done-info-text {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-bottom: 8px;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.done-info-text--warning {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 10px;
+  padding: 8px 12px;
+  text-align: left;
 }
 
 .done-stats {
@@ -1212,7 +1206,7 @@ useHead({ title: 'Hata Asistanı - CassMach' })
 
 .done-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .action-btn {
@@ -1243,6 +1237,17 @@ useHead({ title: 'Hata Asistanı - CassMach' })
 .action-btn--retry:hover:not(:disabled) {
   background: #f1f5f9;
   border-color: #94a3b8;
+}
+
+.action-btn--not-satisfied {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.action-btn--not-satisfied:hover:not(:disabled) {
+  background: #fef3c7;
+  border-color: #fbbf24;
 }
 
 .action-btn--accept {
