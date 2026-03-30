@@ -225,21 +225,8 @@
               <div class="retry-divider-line"></div>
             </div>
             <div v-else-if="msg.meta?.type === 'done'" class="done-msg">
-              <div class="done-stats">
-                <span class="done-stat">
-                  <v-icon size="14">mdi-circle-multiple-outline</v-icon>
-                  {{ msg.meta.creditsCharged?.toFixed(2) }} kredi kullanıldı
-                </span>
-                <span v-if="!msg.meta.isHistory" class="done-stat">
-                  <v-icon size="14">mdi-wallet-outline</v-icon>
-                  Kalan: {{ msg.meta.remainingBalance?.toFixed(1) }}
-                </span>
-                <span v-if="!msg.meta.isHistory" class="done-stat">
-                  <v-icon size="14">mdi-refresh</v-icon>
-                  {{ msg.meta.remainingRetries }} deneme hakkı
-                </span>
+              <div v-if="msg.meta.isHistory && msg.meta.isAccepted === true" class="done-stats">
                 <v-chip
-                  v-if="msg.meta.isAccepted === true"
                   size="x-small"
                   color="success"
                   variant="tonal"

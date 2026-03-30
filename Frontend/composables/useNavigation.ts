@@ -23,6 +23,12 @@
           icon: 'mdi-chat-processing-outline',
           to: '/error-assistant',
           permission: 'Errors.Read'
+        },
+        {
+          title: 'AI Kullanım Yönetimi',
+          icon: 'mdi-chart-box-outline',
+          to: '/admin-ai',
+          permission: 'AdminPanel.Read'
         }
       ]
     },
