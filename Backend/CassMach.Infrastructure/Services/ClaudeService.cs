@@ -74,6 +74,9 @@ Güvenlik uyarılarını mutlaka belirt.";
 
         public async Task<ParseResult> ParseUserQuestion(string question, CancellationToken cancellationToken = default)
         {
+            if (_settings.UseMockResponse)
+                return MockParse(question);
+
             if (!await _semaphore.WaitAsync(TimeSpan.FromSeconds(_settings.TimeoutSeconds), cancellationToken))
                 throw new TimeoutException("Claude API concurrency limit reached");
 
@@ -134,6 +137,13 @@ Güvenlik uyarılarını mutlaka belirt.";
             string question, string brand, string model, string errorCode, string symptom,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
+            if (_settings.UseMockResponse)
+            {
+                await foreach (var r in MockStream(brand, errorCode, cancellationToken))
+                    yield return r;
+                yield break;
+            }
+
             var userMessage = BuildSolutionPrompt(question, brand, model, errorCode, symptom);
 
             await foreach (var result in StreamFromClaude(SOLUTION_SYSTEM_PROMPT, userMessage, cancellationToken))
@@ -147,6 +157,13 @@ Güvenlik uyarılarını mutlaka belirt.";
             List<string> previousResponses,
             [EnumeratorCancellation] CancellationToken cancellationToken = default)
         {
+            if (_settings.UseMockResponse)
+            {
+                await foreach (var r in MockStream(brand, errorCode, cancellationToken, isRetry: true))
+                    yield return r;
+                yield break;
+            }
+
             var userMessage = BuildRetryPrompt(question, brand, model, errorCode, symptom, previousResponses);
 
             await foreach (var result in StreamFromClaude(RETRY_SYSTEM_PROMPT, userMessage, cancellationToken))
@@ -251,6 +268,105 @@ Güvenlik uyarılarını mutlaka belirt.";
 
             return sb.ToString();
         }
+
+        #region Mock Methods
+
+        private static ParseResult MockParse(string question)
+        {
+            var q = question.ToLowerInvariant();
+
+            var brands = new[] { "fanuc", "siemens", "haas", "mitsubishi", "mazak", "okuma", "dmg", "heidenhain", "doosan", "hyundai" };
+            string brand = null;
+            foreach (var b in brands)
+            {
+                if (q.Contains(b)) { brand = char.ToUpper(b[0]) + b.Substring(1); break; }
+            }
+
+            string errorCode = null;
+            var codeMatch = System.Text.RegularExpressions.Regex.Match(q, @"(?:alarm|hata|error|fault|code)\s*[:#]?\s*([A-Za-z]?\d{2,5})", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            if (codeMatch.Success) errorCode = codeMatch.Groups[1].Value.ToUpper();
+            if (errorCode == null)
+            {
+                var numMatch = System.Text.RegularExpressions.Regex.Match(q, @"\b([A-Z]?\d{3,5})\b");
+                if (numMatch.Success) errorCode = numMatch.Value;
+            }
+
+            string symptom = null;
+            var symptomKeywords = new[] { "ışık", "titreşim", "ses", "durdu", "çalışmıyor", "hata", "alarm", "yanıyor", "sönüyor", "kırmızı", "hareket" };
+            foreach (var kw in symptomKeywords)
+            {
+                if (q.Contains(kw)) { symptom = question; break; }
+            }
+
+            bool isValid = brand != null || errorCode != null || symptom != null ||
+                           q.Contains("makine") || q.Contains("cnc") || q.Contains("motor") ||
+                           q.Contains("tezgah") || q.Contains("servo") || q.Contains("plc");
+
+            return new ParseResult
+            {
+                Brand = brand,
+                Model = null,
+                ErrorCode = errorCode,
+                Symptom = symptom,
+                IsValid = isValid
+            };
+        }
+
+        private static async IAsyncEnumerable<StreamResult> MockStream(
+            string brand, string errorCode,
+            [EnumeratorCancellation] CancellationToken cancellationToken,
+            bool isRetry = false)
+        {
+            var code = errorCode ?? "GENEL";
+            var prefix = isRetry ? "Alternatif " : "";
+
+            var mockResponse = $@"# {brand} {code} — {prefix}Çözüm Rehberi [MOCK]
+
+## Güvenlik Uyarıları
+- Makineyi durdurun ve ana şalteri kapatın
+- Yetkili personel dışında müdahale etmeyin
+- Koruyucu ekipman kullanın
+
+## Olası Nedenler
+- Servo motor bağlantı hatası
+- Encoder sinyal kaybı
+- Güç kaynağı dalgalanması
+- Mekanik aşınma veya gevşeme
+
+## Adım Adım Çözüm
+
+### 1. İlk Kontrol
+- Hata kodunu ve alarm loglarını kontrol edin
+- Bağlantı kablolarını görsel olarak inceleyin
+- Gevşek konnektör olup olmadığını kontrol edin
+
+### 2. Elektrik Kontrolleri
+- Servo amplifikatör LED göstergelerini kontrol edin
+- Motor kablolama bütünlüğünü ölçün
+- Topraklama bağlantısını doğrulayın
+
+### 3. Mekanik Kontroller
+- Rulman sesleri ve titreşimleri dinleyin
+- Kayış/kaplin durumunu kontrol edin
+- Yağlama seviyesini kontrol edin
+
+## Sorun Devam Ederse
+{brand} yetkili servis ile iletişime geçin.
+
+**Not: Bu bir TEST yanıtıdır (mock mod aktif). Gerçek AI yanıtı için appsettings'te UseMockResponse'u false yapın.**";
+
+            var words = mockResponse.Split(' ');
+            foreach (var word in words)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                yield return new StreamResult { Text = word + " ", IsDone = false };
+                await Task.Delay(25, cancellationToken);
+            }
+
+            yield return new StreamResult { Text = string.Empty, IsDone = true, InputTokens = 0, OutputTokens = 0 };
+        }
+
+        #endregion
 
         private static string ExtractStreamText(string eventJson)
         {

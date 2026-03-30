@@ -7,5 +7,6 @@ namespace CassMach.Infrastructure.Configuration
         public int MaxConcurrentRequests { get; set; } = 5;
         public int TimeoutSeconds { get; set; } = 30;
         public int MaxRetryAttempts { get; set; } = 3;
+        public bool UseMockResponse { get; set; } = false;
     }
 }
