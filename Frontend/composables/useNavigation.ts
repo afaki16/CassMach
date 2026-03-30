@@ -25,6 +25,12 @@
           permission: 'Errors.Read'
         },
         {
+          title: 'Geçmiş Sorgularım',
+          icon: 'mdi-history',
+          to: '/error-history',
+          permission: 'Errors.Read'
+        },
+        {
           title: 'AI Kullanım Yönetimi',
           icon: 'mdi-chart-box-outline',
           to: '/admin-ai',

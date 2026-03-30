@@ -69,120 +69,36 @@
         </div>
       </div>
 
-      <!-- History Panel (hero screen only) -->
-      <div v-if="messages.length === 0" class="history-panel">
-        <div class="history-header">
-          <div class="history-header-left">
-            <v-icon size="20" class="history-icon">mdi-history</v-icon>
-            <h2 class="history-title">Geçmiş Sorgularım</h2>
-            <span v-if="historyTotal > 0" class="history-badge">{{ historyTotal }}</span>
+      <!-- Last Query Card (hero screen only) -->
+      <div v-if="messages.length === 0 && lastQuery" class="last-query-card">
+        <div class="last-query-header">
+          <div class="last-query-header-left">
+            <v-icon size="18" color="#334155">mdi-clock-outline</v-icon>
+            <span class="last-query-label">Son Sorgunuz</span>
           </div>
-          <div class="history-search-wrap">
-            <v-icon size="16" class="history-search-icon">mdi-magnify</v-icon>
-            <input
-              v-model="historySearch"
-              type="text"
-              class="history-search-input"
-              placeholder="Geçmişte ara..."
-              @input="debouncedFetchHistory"
-            />
-            <button v-if="historySearch" class="history-search-clear" @click="historySearch = ''; fetchHistory()">
-              <v-icon size="14">mdi-close</v-icon>
-            </button>
+          <NuxtLink to="/error-history" class="last-query-link">
+            Tüm Geçmişi Gör
+            <v-icon size="14">mdi-arrow-right</v-icon>
+          </NuxtLink>
+        </div>
+        <button class="last-query-body" @click="loadConversation(lastQuery)">
+          <div class="last-query-badges">
+            <span v-if="lastQuery.brand" class="lq-brand">{{ lastQuery.brand }}</span>
+            <span v-if="lastQuery.errorCode" class="lq-code">{{ lastQuery.errorCode }}</span>
+            <v-chip
+              v-if="lastQuery.isAccepted === true"
+              size="x-small"
+              color="success"
+              variant="tonal"
+              prepend-icon="mdi-check-circle"
+            >Kabul Edildi</v-chip>
           </div>
-        </div>
-
-        <!-- History Loading -->
-        <div v-if="historyLoading" class="history-loading">
-          <v-progress-circular indeterminate size="24" width="2" color="grey" />
-        </div>
-
-        <!-- History Empty -->
-        <div v-else-if="historyItems.length === 0" class="history-empty">
-          <v-icon size="36" color="grey-lighten-1">mdi-chat-remove-outline</v-icon>
-          <span>{{ historySearch ? 'Sonuç bulunamadı' : 'Henüz sorgu geçmişiniz yok' }}</span>
-        </div>
-
-        <!-- History List -->
-        <div v-else class="history-list">
-          <div
-            v-for="item in historyItems"
-            :key="item.id"
-            class="history-item"
-            :class="{ 'history-item--expanded': expandedHistoryId === item.id }"
-          >
-            <button class="history-item-header" @click="toggleHistoryItem(item)">
-              <div class="history-item-info">
-                <div class="history-item-top">
-                  <span class="history-item-brand">{{ item.brand }}</span>
-                  <span class="history-item-code">{{ item.errorCode }}</span>
-                  <v-chip
-                    v-if="item.isAccepted === true"
-                    size="x-small"
-                    color="success"
-                    variant="tonal"
-                    prepend-icon="mdi-check-circle"
-                  >Kabul Edildi</v-chip>
-                  <v-chip
-                    v-else-if="item.fromCache"
-                    size="x-small"
-                    color="info"
-                    variant="tonal"
-                    prepend-icon="mdi-cached"
-                  >Önbellek</v-chip>
-                </div>
-                <p class="history-item-question">{{ item.userQuestion }}</p>
-              </div>
-              <div class="history-item-meta">
-                <span class="history-item-date">{{ formatDate(item.createdDate) }}</span>
-                <span class="history-item-credits">{{ item.creditsCharged.toFixed(1) }} kr</span>
-                <v-icon size="18" class="history-item-chevron">
-                  {{ expandedHistoryId === item.id ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
-                </v-icon>
-              </div>
-            </button>
-
-            <!-- Expanded Detail -->
-            <div v-if="expandedHistoryId === item.id" class="history-item-detail">
-              <div class="history-detail-content">
-                <div class="history-detail-header">
-                  <span><strong>{{ item.brand }}</strong> {{ item.model }} — {{ item.errorCode }}</span>
-                  <span class="history-detail-attempt">Deneme #{{ item.attemptNumber }}</span>
-                </div>
-                <div class="history-detail-response" v-html="formatMessage(item.aiResponse)"></div>
-                <div class="history-detail-actions">
-                  <button
-                    class="action-btn action-btn--load"
-                    @click.stop="loadConversation(item)"
-                    :disabled="conversationLoading"
-                  >
-                    <v-icon size="16">mdi-chat-outline</v-icon>
-                    {{ conversationLoading ? 'Yükleniyor...' : 'Konuşmayı Aç' }}
-                  </button>
-                </div>
-              </div>
-            </div>
+          <p class="last-query-question">{{ lastQuery.userQuestion }}</p>
+          <div class="last-query-meta">
+            <span class="lq-date">{{ formatDate(lastQuery.createdDate) }}</span>
+            <span class="lq-credits">{{ lastQuery.creditsCharged.toFixed(1) }} kredi</span>
           </div>
-        </div>
-
-        <!-- Pagination -->
-        <div v-if="historyTotalPages > 1" class="history-pagination">
-          <button
-            class="pagination-btn"
-            :disabled="historyPage <= 1"
-            @click="historyPage--; fetchHistory()"
-          >
-            <v-icon size="18">mdi-chevron-left</v-icon>
-          </button>
-          <span class="pagination-info">{{ historyPage }} / {{ historyTotalPages }}</span>
-          <button
-            class="pagination-btn"
-            :disabled="historyPage >= historyTotalPages"
-            @click="historyPage++; fetchHistory()"
-          >
-            <v-icon size="18">mdi-chevron-right</v-icon>
-          </button>
-        </div>
+        </button>
       </div>
     </section>
 
@@ -382,48 +298,18 @@ interface HistoryItem {
   createdDate: string
 }
 
-const historyItems = ref<HistoryItem[]>([])
-const historyPage = ref(1)
-const historyTotalPages = ref(0)
-const historyTotal = ref(0)
-const historySearch = ref('')
-const historyLoading = ref(false)
-
-const expandedHistoryId = ref<number | null>(null)
+const lastQuery = ref<HistoryItem | null>(null)
 const conversationLoading = ref(false)
 
-let debounceTimer: ReturnType<typeof setTimeout> | null = null
-const debouncedFetchHistory = () => {
-  if (debounceTimer) clearTimeout(debounceTimer)
-  debounceTimer = setTimeout(() => {
-    historyPage.value = 1
-    fetchHistory()
-  }, 400)
-}
-
-const fetchHistory = async () => {
-  historyLoading.value = true
+const fetchLastQuery = async () => {
   try {
-    const params = new URLSearchParams({
-      page: historyPage.value.toString(),
-      pageSize: '8'
-    })
-    if (historySearch.value.trim()) {
-      params.append('searchTerm', historySearch.value.trim())
-    }
+    const params = new URLSearchParams({ page: '1', pageSize: '1' })
     const res = await get<any>(`${API_ENDPOINTS.ERRORS.HISTORY}?${params.toString()}`)
-    historyItems.value = res.data?.items ?? []
-    historyTotalPages.value = res.data?.totalPages ?? 0
-    historyTotal.value = res.data?.totalCount ?? 0
+    const items = res.data?.items ?? []
+    lastQuery.value = items.length > 0 ? items[0] : null
   } catch {
-    historyItems.value = []
-  } finally {
-    historyLoading.value = false
+    lastQuery.value = null
   }
-}
-
-const toggleHistoryItem = (item: HistoryItem) => {
-  expandedHistoryId.value = expandedHistoryId.value === item.id ? null : item.id
 }
 
 const loadConversation = async (item: HistoryItem) => {
@@ -494,13 +380,6 @@ const formatDate = (dateStr: string) => {
   const diffDays = Math.floor(diffHours / 24)
   if (diffDays < 7) return `${diffDays} gün önce`
   return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })
-}
-
-const goBackToHistory = () => {
-  messages.value = []
-  currentStreamText.value = ''
-  fetchHistory()
-  nextTick(() => textareaRef.value?.focus())
 }
 
 const startNewConversation = () => {
@@ -768,7 +647,7 @@ watch(() => messages.value.length, (len) => {
 
 onMounted(() => {
   fetchBalance()
-  fetchHistory()
+  fetchLastQuery()
   resizeTextarea()
   window.addEventListener('resize', resizeTextarea)
   nextTick(() => textareaRef.value?.focus())
@@ -1412,160 +1291,77 @@ useHead({ title: 'Hata Asistanı - CassMach' })
   border-color: #e2e8f0;
 }
 
-/* History Panel */
-.history-panel {
+/* Last Query Card */
+.last-query-card {
   position: relative;
   z-index: 1;
   width: 95%;
-  max-width: 900px;
-  margin: 32px auto 0;
+  max-width: 600px;
+  margin: 24px auto 0;
   background: white;
   border: 1px solid #e2e8f0;
-  border-radius: 20px;
-  padding: 24px;
-  box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04);
+  border-radius: 16px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
 }
 
-.history-header {
+.last-query-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 18px;
-  padding-bottom: 14px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
   border-bottom: 1px solid #f1f5f9;
-  flex-wrap: wrap;
 }
 
-.history-header-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.history-icon { color: #334155; }
-
-.history-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0;
-}
-
-.history-badge {
-  min-width: 24px;
-  height: 24px;
-  padding: 0 7px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, #0f172a 0%, #334155 100%);
-  color: white;
-  font-size: 0.75rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.history-search-wrap {
+.last-query-header-left {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 7px 10px;
-  min-width: 180px;
-  transition: border-color 0.2s;
 }
 
-.history-search-wrap:focus-within { border-color: #94a3b8; }
-
-.history-search-icon { color: #94a3b8; flex-shrink: 0; }
-
-.history-search-input {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
+.last-query-label {
   font-size: 0.82rem;
+  font-weight: 700;
   color: #334155;
-  font-family: inherit;
 }
 
-.history-search-input::placeholder { color: #94a3b8; }
-
-.history-search-clear {
-  background: none;
-  border: none;
-  cursor: pointer;
-  color: #94a3b8;
-  display: flex;
+.last-query-link {
+  display: inline-flex;
   align-items: center;
-  padding: 2px;
+  gap: 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #64748b;
+  text-decoration: none;
   transition: color 0.2s;
 }
 
-.history-search-clear:hover { color: #475569; }
+.last-query-link:hover { color: #0f172a; }
 
-.history-loading, .history-empty {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 32px 0;
-  color: #94a3b8;
-  font-size: 0.85rem;
-}
-
-.history-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.history-item {
-  border: 1px solid #f1f5f9;
-  border-radius: 14px;
-  overflow: hidden;
-  transition: all 0.2s;
-}
-
-.history-item:hover { border-color: #e2e8f0; }
-
-.history-item--expanded {
-  border-color: #cbd5e1;
-  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
-}
-
-.history-item-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
+.last-query-body {
   width: 100%;
-  padding: 12px 16px;
   background: transparent;
   border: none;
   cursor: pointer;
   font-family: inherit;
   text-align: left;
-  transition: background 0.15s;
+  padding: 4px 0;
+  transition: opacity 0.15s;
 }
 
-.history-item-header:hover { background: #f8fafc; }
+.last-query-body:hover { opacity: 0.8; }
 
-.history-item-info { flex: 1; min-width: 0; }
-
-.history-item-top {
+.last-query-badges {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-bottom: 4px;
+  gap: 6px;
+  margin-bottom: 6px;
   flex-wrap: wrap;
 }
 
-.history-item-brand {
-  font-size: 0.8rem;
+.lq-brand {
+  font-size: 0.75rem;
   font-weight: 700;
   color: #0f172a;
   background: #f1f5f9;
@@ -1573,144 +1369,39 @@ useHead({ title: 'Hata Asistanı - CassMach' })
   border-radius: 6px;
 }
 
-.history-item-code {
-  font-size: 0.8rem;
+.lq-code {
+  font-size: 0.75rem;
   font-weight: 600;
   color: #475569;
   font-family: 'SF Mono', 'Fira Code', monospace;
 }
 
-.history-item-question {
-  margin: 0;
-  font-size: 0.82rem;
-  color: #64748b;
+.last-query-question {
+  margin: 0 0 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #1e293b;
+  line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.history-item-meta {
+.last-query-meta {
   display: flex;
   align-items: center;
-  gap: 10px;
-  flex-shrink: 0;
-}
-
-.history-item-date {
-  font-size: 0.72rem;
-  color: #94a3b8;
-  white-space: nowrap;
-}
-
-.history-item-credits {
-  font-size: 0.72rem;
-  color: #64748b;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.history-item-chevron {
-  color: #94a3b8;
-  transition: transform 0.2s;
-}
-
-/* Expanded Detail */
-.history-item-detail {
-  padding: 0 16px 16px;
-  border-top: 1px solid #f1f5f9;
-}
-
-.history-detail-content {
-  padding-top: 14px;
-}
-
-.history-detail-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  font-size: 0.82rem;
-  color: #475569;
-}
-
-.history-detail-attempt {
-  font-size: 0.72rem;
-  font-weight: 600;
-  color: #94a3b8;
-  background: #f1f5f9;
-  padding: 2px 8px;
-  border-radius: 6px;
-}
-
-.history-detail-actions {
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.action-btn--load {
-  background: linear-gradient(180deg, #0f172a 0%, #334155 100%);
-  border-color: transparent;
-  color: white;
-}
-
-.action-btn--load:hover:not(:disabled) {
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.3);
-  transform: translateY(-1px);
-}
-
-.history-detail-response {
-  font-size: 0.88rem;
-  line-height: 1.7;
-  color: #334155;
-  background: #f8fafc;
-  border: 1px solid #f1f5f9;
-  border-radius: 12px;
-  padding: 14px 18px;
-  max-height: 300px;
-  overflow-y: auto;
-  word-break: break-word;
-}
-
-/* Pagination */
-.history-pagination {
-  display: flex;
-  align-items: center;
-  justify-content: center;
   gap: 12px;
-  margin-top: 16px;
-  padding-top: 14px;
-  border-top: 1px solid #f1f5f9;
 }
 
-.pagination-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #475569;
-  transition: all 0.15s;
+.lq-date {
+  font-size: 0.72rem;
+  color: #94a3b8;
 }
 
-.pagination-btn:hover:not(:disabled) {
-  background: #f1f5f9;
-  border-color: #94a3b8;
-}
-
-.pagination-btn:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
-
-.pagination-info {
-  font-size: 0.82rem;
-  font-weight: 600;
+.lq-credits {
+  font-size: 0.72rem;
   color: #64748b;
+  font-weight: 600;
 }
 
 /* Footer */
@@ -1756,30 +1447,8 @@ useHead({ title: 'Hata Asistanı - CassMach' })
     max-width: 90%;
   }
 
-  .history-panel {
+  .last-query-card {
     width: 100%;
-    padding: 16px;
-    border-radius: 14px;
-  }
-
-  .history-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .history-search-wrap {
-    min-width: 0;
-  }
-
-  .history-item-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
-  }
-
-  .history-item-meta {
-    width: 100%;
-    justify-content: space-between;
   }
 }
 </style>
