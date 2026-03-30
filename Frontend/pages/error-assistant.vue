@@ -126,7 +126,7 @@
               <div class="retry-divider-line"></div>
               <span class="retry-divider-text">
                 <v-icon size="14">mdi-refresh</v-icon>
-                Deneme #{{ msg.meta.attempt }}
+                Tekrar #{{ msg.meta.attempt }}
               </span>
               <div class="retry-divider-line"></div>
             </div>
@@ -324,37 +324,15 @@ const loadConversation = async (item: HistoryItem) => {
 
     rebuilt.push({ role: 'user', content: first.userQuestion })
 
-    rebuilt.push({
-      role: 'system',
-      content: '',
-      meta: { type: 'parse', brand: first.brand, errorCode: first.errorCode, model: first.model }
-    })
-
     for (const attempt of attempts) {
       if (attempt.attemptNumber > 1) {
         rebuilt.push({
           role: 'system',
-          content: `Tekrar deneme #${attempt.attemptNumber}`,
+          content: '',
           meta: { type: 'retry-divider', attempt: attempt.attemptNumber }
         })
       }
-
       rebuilt.push({ role: 'assistant', content: attempt.aiResponse || '' })
-
-      rebuilt.push({
-        role: 'system',
-        content: '',
-        meta: {
-          type: 'done',
-          conversationId: attempt.conversationId,
-          attempt: attempt.attemptNumber,
-          creditsCharged: attempt.creditsCharged,
-          remainingBalance: tokenBalance.value,
-          remainingRetries: 0,
-          isHistory: true,
-          isAccepted: attempt.isAccepted
-        }
-      })
     }
 
     messages.value = rebuilt

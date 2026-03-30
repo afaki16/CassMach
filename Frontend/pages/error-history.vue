@@ -162,7 +162,7 @@
                 <div class="conv-divider-line"></div>
                 <span class="conv-divider-text">
                   <v-icon size="14">mdi-refresh</v-icon>
-                  Deneme #{{ msg.attempt }}
+                  Tekrar #{{ msg.attempt }}
                 </span>
                 <div class="conv-divider-line"></div>
               </div>
