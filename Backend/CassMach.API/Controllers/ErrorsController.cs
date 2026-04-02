@@ -5,6 +5,7 @@ using CassMach.Application.Features.Errors.Queries.GetConversation;
 using CassMach.Application.Features.Errors.Queries.GetErrorHistory;
 using CassMach.Application.Features.Errors.Queries.GetTokenBalance;
 using CassMach.Domain.Common.Interfaces;
+using CassMach.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -60,15 +61,22 @@ namespace CassMach.API.Controllers
                     return;
                 }
 
-                if (string.IsNullOrWhiteSpace(parseResult.Brand))
+                var hasBrand = !string.IsNullOrWhiteSpace(parseResult.Brand);
+                var hasErrorCode = !string.IsNullOrWhiteSpace(parseResult.ErrorCode);
+                var hasSymptom = !string.IsNullOrWhiteSpace(parseResult.Symptom);
+                if (!hasBrand && !hasErrorCode && !hasSymptom)
                 {
-                    await WriteSSEEvent(new { type = "error", message = "Lütfen makine markasını belirtin. Örnek: 'Fanuc alarm 414' veya 'Siemens CNC'de kırmızı ışık yanıyor'" });
+                    await WriteSSEEvent(new { type = "error", message = "Lütfen makine markası, hata kodu veya belirti belirtin. Örnek: 'Lenze 5115 hatası' veya 'Siemens CNC'de kırmızı ışık yanıyor'" });
                     return;
                 }
 
                 await WriteSSEEvent(new { type = "parse", brand = parseResult.Brand, errorCode = parseResult.ErrorCode, model = parseResult.Model });
 
-                var cachedSolution = await _unitOfWork.ErrorSolutions.GetAcceptedSolution(parseResult.Brand, parseResult.ErrorCode);
+                ErrorSolution? cachedSolution = null;
+                if (hasBrand)
+                {
+                    cachedSolution = await _unitOfWork.ErrorSolutions.GetAcceptedSolution(parseResult.Brand, parseResult.ErrorCode);
+                }
                 var conversationId = Guid.NewGuid();
 
                 if (cachedSolution != null)
@@ -90,7 +98,7 @@ namespace CassMach.API.Controllers
                         UserId = userId,
                         ConversationId = conversationId,
                         UserQuestion = dto.Question,
-                        Brand = parseResult.Brand,
+                        Brand = parseResult.Brand ?? string.Empty,
                         Model = parseResult.Model,
                         ErrorCode = parseResult.ErrorCode,
                         Symptom = parseResult.Symptom,
@@ -136,12 +144,12 @@ namespace CassMach.API.Controllers
                     var multiplier = decimal.Parse(multiplierSetting.Value);
                     var creditsCharged = (inputTokens + outputTokens) * multiplier;
 
-                    var aiRecord = new Domain.Entities.ErrorSolution
+                    var aiRecord = new ErrorSolution
                     {
                         UserId = userId,
                         ConversationId = conversationId,
                         UserQuestion = dto.Question,
-                        Brand = parseResult.Brand,
+                        Brand = parseResult.Brand ?? string.Empty,
                         Model = parseResult.Model,
                         ErrorCode = parseResult.ErrorCode,
                         Symptom = parseResult.Symptom,
@@ -242,7 +250,7 @@ namespace CassMach.API.Controllers
                 var multiplier = decimal.Parse(multiplierSetting.Value);
                 var creditsCharged = (inputTokens + outputTokens) * multiplier;
 
-                var newAttempt = new Domain.Entities.ErrorSolution
+                var newAttempt = new ErrorSolution
                 {
                     UserId = userId,
                     ConversationId = conversationId,

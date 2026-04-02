@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
@@ -41,7 +42,9 @@ Geçerli konular: makine, PLC, CNC, robot, üretim hattı, hidrolik, pnömatik, 
 
 Geçersiz konular (is_valid=false): yazılım, web, telefon, bilgisayar, günlük yaşam, sağlık veya endüstri dışı her şey.
 
-Eğer kullanıcı makine markası belirtmediyse brand alanını null olarak dön. Marka bilgisi olmadan çözüm üretilemez.";
+Endüstriyel otomasyon / CNC / servo sürücü / PLC markaları (örnek: Lenze, Siemens, Fanuc, ABB, Schneider, Yaskawa, Beckhoff, Danfoss, Mitsubishi, Omron, Rockwell, Bosch Rexroth) kullanıcı tarafından TEK BAŞINA yazılsa bile konu endüstriyel kabul edilir: is_valid=true ve brand alanına bu markayı yaz.
+
+Eğer kullanıcı makine markası belirtmediyse brand alanını null olarak dön; marka yoksa bile hata kodu veya semptom varsa is_valid=true kalmalıdır.";
 
         private const string SOLUTION_SYSTEM_PROMPT = @"Sen bir endüstriyel makine hata kodu uzmanısın.
 Kullanıcının dilinde cevap ver.
@@ -275,11 +278,24 @@ Güvenlik uyarılarını mutlaka belirt.";
         {
             var q = question.ToLowerInvariant();
 
-            var brands = new[] { "fanuc", "siemens", "haas", "mitsubishi", "mazak", "okuma", "dmg", "heidenhain", "doosan", "hyundai" };
-            string brand = null;
-            foreach (var b in brands)
+            var brands = new[]
             {
-                if (q.Contains(b)) { brand = char.ToUpper(b[0]) + b.Substring(1); break; }
+                "allen-bradley", "allen bradley", "bosch rexroth", "bosch",
+                "abb", "beckhoff", "danfoss", "delta", "dmg", "doosan", "fanuc", "festo", "haas",
+                "heidenhain", "hitachi", "hyundai", "inovance", "kuka", "lenze", "mazak", "mitsubishi",
+                "okuma", "omron", "panasonic", "rexroth", "rockwell", "schneider", "sew", "siemens",
+                "toshiba", "yaskawa", "yokogawa", "nidec", "comau", "vacon"
+            };
+            string brand = null;
+            foreach (var b in brands.OrderByDescending(x => x.Length))
+            {
+                if (q.Contains(b))
+                {
+                    var display = b.Replace("-", " ");
+                    var parts = display.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    brand = string.Join(" ", parts.Select(p => char.ToUpperInvariant(p[0]) + p.Substring(1)));
+                    break;
+                }
             }
 
             string errorCode = null;
@@ -300,7 +316,9 @@ Güvenlik uyarılarını mutlaka belirt.";
 
             bool isValid = brand != null || errorCode != null || symptom != null ||
                            q.Contains("makine") || q.Contains("cnc") || q.Contains("motor") ||
-                           q.Contains("tezgah") || q.Contains("servo") || q.Contains("plc");
+                           q.Contains("tezgah") || q.Contains("servo") || q.Contains("plc") ||
+                           q.Contains("sürücü") || q.Contains("surucu") || q.Contains("inverter") ||
+                           q.Contains("vfd") || q.Contains("encoder");
 
             return new ParseResult
             {
@@ -320,7 +338,8 @@ Güvenlik uyarılarını mutlaka belirt.";
             var code = errorCode ?? "GENEL";
             var prefix = isRetry ? "Alternatif " : "";
 
-            var mockResponse = $@"# {brand} {code} — {prefix}Çözüm Rehberi [MOCK]
+            var brandLabel = string.IsNullOrWhiteSpace(brand) ? "Marka belirtilmedi" : brand;
+            var mockResponse = $@"# {brandLabel} {code} — {prefix}Çözüm Rehberi [MOCK]
 
 ## Güvenlik Uyarıları
 - Makineyi durdurun ve ana şalteri kapatın
@@ -351,7 +370,7 @@ Güvenlik uyarılarını mutlaka belirt.";
 - Yağlama seviyesini kontrol edin
 
 ## Sorun Devam Ederse
-{brand} yetkili servis ile iletişime geçin.
+{(string.IsNullOrWhiteSpace(brand) ? "Üretici yetkili servisi ile iletişime geçin." : $"{brand} yetkili servis ile iletişime geçin.")}
 
 **Not: Bu bir TEST yanıtıdır (mock mod aktif). Gerçek AI yanıtı için appsettings'te UseMockResponse'u false yapın.**";
 
