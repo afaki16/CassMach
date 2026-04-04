@@ -74,7 +74,8 @@
       <div class="flex-shrink-0 relative">
         <div class="sidebar-divider"></div>
         <button
-          @click="showUserMenu = !showUserMenu"
+          type="button"
+          @click.stop="showUserMenu = !showUserMenu"
           class="sidebar-user-btn w-full flex items-center p-3 transition-all duration-200"
           :class="isSidebarOpen ? 'space-x-3' : 'justify-center'"
         >
@@ -172,7 +173,7 @@ import AppToast from '~/components/UI/AppToast.vue'
 const isSidebarOpen = ref(true)
 const showUserMenu = ref(false)
 const authStore = useAuthStore()
-const { permissions, roles } = storeToRefs(authStore)
+const { roles } = storeToRefs(authStore)
 const authUtils = useAuth()
 const router = useRouter()
 
@@ -191,7 +192,7 @@ const userInfo = computed(() => ({
 const visibleMenus = computed(() => {
   return filterNavigationByPermissions(
     navigationItems,
-    (p) => permissions.value.includes(p),
+    (p) => authStore.hasPermission(p),
     (r) => roles.value.includes(r)
   )
 })

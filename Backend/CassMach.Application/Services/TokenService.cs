@@ -66,7 +66,7 @@ namespace CassMach.Application.Services
         public async Task ChargeForAiResponse(int userId, int inputTokens, int outputTokens, Guid conversationId, string description)
         {
             var multiplierSetting = await _unitOfWork.SystemSettings.GetByKey("token_multiplier");
-            var multiplier = multiplierSetting != null ? decimal.Parse(multiplierSetting.Value) : 0.1m;
+            var multiplier = multiplierSetting != null ? decimal.Parse(multiplierSetting.Value) : 1m;
 
             var totalRawTokens = inputTokens + outputTokens;
             var creditCharge = totalRawTokens * multiplier;
