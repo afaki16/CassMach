@@ -233,10 +233,6 @@
       <p>CassMach AI — Makine Hata Kodu Asistanı</p>
     </div>
 
-    <!-- Accept Success Snackbar -->
-    <v-snackbar v-model="showSnackbar" :color="snackbarColor" :timeout="3000" location="top">
-      {{ snackbarText }}
-    </v-snackbar>
   </div>
 </template>
 
@@ -270,10 +266,6 @@ const mirrorRef = ref<HTMLElement | null>(null)
 const currentStreamText = ref('')
 const currentStreamingIndex = ref(-1)
 
-const showSnackbar = ref(false)
-const snackbarText = ref('')
-const snackbarColor = ref('success')
-
 const templateQuestions = [
   { icon: 'mdi-alert-circle-outline', title: 'Fanuc Alarm 414', color: 'red', query: 'Fanuc alarm 414 nedir ve nasıl çözülür?' },
   { icon: 'mdi-wrench-outline', title: 'Siemens F30001', color: 'blue', query: 'Siemens Sinumerik F30001 hata kodu çözümü' },
@@ -282,6 +274,7 @@ const templateQuestions = [
 ]
 
 const { get, post, patch } = useApi()
+const toast = useToast()
 
 interface HistoryItem {
   id: number
@@ -338,9 +331,7 @@ const loadConversation = async (item: HistoryItem) => {
     messages.value = rebuilt
     scrollToBottom()
   } catch {
-    snackbarText.value = 'Konuşma yüklenirken hata oluştu.'
-    snackbarColor.value = 'error'
-    showSnackbar.value = true
+    toast.error('Konuşma yüklenirken hata oluştu.', { title: 'Yüklenemedi' })
   } finally {
     conversationLoading.value = false
   }
@@ -594,21 +585,17 @@ const handleRetry = async (conversationId: string) => {
 }
 
 const handleNotSatisfied = async (conversationId: string) => {
-  snackbarText.value = 'Geri bildiriminiz kaydedildi. Destek ekibimiz sizinle iletişime geçecektir.'
-  snackbarColor.value = 'warning'
-  showSnackbar.value = true
+  toast.warning('Geri bildiriminiz kaydedildi. Destek ekibimiz sizinle iletişime geçecektir.', {
+    title: 'Teşekkürler',
+  })
 }
 
 const handleAccept = async (conversationId: string, attemptNumber: number) => {
   try {
     await patch(API_ENDPOINTS.ERRORS.ACCEPT(conversationId), { attemptNumber })
-    snackbarText.value = 'Çözüm kabul edildi!'
-    snackbarColor.value = 'success'
-    showSnackbar.value = true
+    toast.success('Çözümünüz kaydedildi.', { title: 'Kabul edildi' })
   } catch {
-    snackbarText.value = 'Kabul işlemi başarısız oldu.'
-    snackbarColor.value = 'error'
-    showSnackbar.value = true
+    toast.error('Kabul işlemi tamamlanamadı. Lütfen tekrar deneyin.', { title: 'Hata' })
   }
 }
 
