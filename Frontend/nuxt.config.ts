@@ -43,8 +43,8 @@ export default defineNuxtConfig({
       apiBase: process.env.API_BASE_URL || 'https://localhost:44333',
       appName: 'CassMach',
       appVersion: '1.0.0',
-      /** Varsayılan layout: default | gradient */
-      defaultLayout:'gradient'
+      /** Tek layout: default (gradient layout kaldırıldı). */
+      defaultLayout: 'default'
     }
   },
   
