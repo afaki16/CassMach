@@ -425,9 +425,9 @@ onUnmounted(() => {
 }
 
 .form-header-logo-img {
-  max-height: 56px;
+  max-height: 112px;
   width: auto;
-  max-width: min(220px, 100%);
+  max-width: min(320px, 100%);
   height: auto;
   object-fit: contain;
   display: block;
@@ -613,6 +613,10 @@ onUnmounted(() => {
 @media (max-width: 480px) {
   .right-panel { padding: 24px 20px; }
   .form-header h1 { font-size: 1.4rem; }
+  .form-header-logo-img {
+    max-height: 88px;
+    max-width: min(260px, 100%);
+  }
 }
 </style>
  
