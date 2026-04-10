@@ -173,8 +173,7 @@ namespace CassMach.API.Controllers
             }
             catch (Exception ex)
             {
-                var detail = ex.InnerException?.Message ?? ex.Message;
-                await WriteSSEEvent(new { type = "error", message = $"Bir hata oluştu: {detail}" });
+                await WriteSSEEvent(new { type = "error", message = ResolveErrorMessage(ex) });
             }
         }
 
@@ -224,6 +223,17 @@ namespace CassMach.API.Controllers
                 // Eğer enrichment body'si geldiyse merge et
                 if (dto != null && !dto.SkipEnrichment)
                 {
+                    // Kullanıcı devam mesajı yazdıysa önce onu parse et, sonra merge et
+                    if (!string.IsNullOrWhiteSpace(dto.ContinuationQuestion))
+                    {
+                        var parsed = await _claudeService.ParseUserQuestion(dto.ContinuationQuestion);
+                        if (!string.IsNullOrWhiteSpace(parsed.Brand)) brand = parsed.Brand;
+                        if (!string.IsNullOrWhiteSpace(parsed.Model)) model = parsed.Model;
+                        if (!string.IsNullOrWhiteSpace(parsed.ErrorCode)) errorCode = parsed.ErrorCode;
+                        if (!string.IsNullOrWhiteSpace(parsed.Symptom)) symptom = parsed.Symptom;
+                    }
+
+                    // Manuel doldurulan alanlar ContinuationQuestion'ı override eder
                     if (!string.IsNullOrWhiteSpace(dto.Brand)) brand = dto.Brand;
                     if (!string.IsNullOrWhiteSpace(dto.Model)) model = dto.Model;
                     if (!string.IsNullOrWhiteSpace(dto.ErrorCode)) errorCode = dto.ErrorCode;
@@ -307,7 +317,7 @@ namespace CassMach.API.Controllers
             }
             catch (Exception ex)
             {
-                await WriteSSEEvent(new { type = "error", message = "Bir hata oluştu: " + ex.Message });
+                await WriteSSEEvent(new { type = "error", message = ResolveErrorMessage(ex) });
             }
         }
 
@@ -367,6 +377,18 @@ namespace CassMach.API.Controllers
             var json = JsonSerializer.Serialize(data, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
             await Response.WriteAsync($"data: {json}\n\n");
             await Response.Body.FlushAsync();
+        }
+
+        private static string ResolveErrorMessage(Exception ex)
+        {
+            var message = ex.InnerException?.Message ?? ex.Message;
+            if (message.Contains("overloaded_error") || message.Contains("overloaded"))
+                return "Claude API şu an yoğun, lütfen birkaç saniye bekleyip tekrar deneyin.";
+            if (message.Contains("rate_limit") || message.Contains("429"))
+                return "İstek limiti aşıldı, lütfen kısa süre sonra tekrar deneyin.";
+            if (message.Contains("timeout") || message.Contains("Timeout"))
+                return "Yanıt süresi aşıldı, lütfen tekrar deneyin.";
+            return $"Bir hata oluştu: {message}";
         }
     }
 }

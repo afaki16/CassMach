@@ -308,6 +308,7 @@ const mirrorRef = ref<HTMLElement | null>(null)
 const currentStreamText = ref('')
 const currentStreamingIndex = ref(-1)
 const currentRetryConversationId = ref<string | null>(null)
+const activeConversationId = ref<string | null>(null)
 const enrichmentForm = reactive<Record<string, string>>({ brand: '', model: '', errorCode: '', symptom: '' })
 
 const templateQuestions = [
@@ -398,6 +399,7 @@ const formatDate = (dateStr: string) => {
 const startNewConversation = () => {
   messages.value = []
   currentStreamText.value = ''
+  activeConversationId.value = null
   nextTick(() => textareaRef.value?.focus())
 }
 
@@ -621,6 +623,7 @@ const handleSSEEvent = (event: any) => {
 
     case 'done':
       tokenBalance.value = event.remainingBalance
+      activeConversationId.value = event.conversationId
       messages.value.push({
         role: 'system',
         content: '',
@@ -658,7 +661,16 @@ const handleAsk = async () => {
 
   isLoading.value = true
   try {
-    await streamSSE(API_ENDPOINTS.ERRORS.ASK, { question: query })
+    // Aktif konuşma varsa yeni mesajı devam olarak route et
+    if (activeConversationId.value) {
+      currentRetryConversationId.value = activeConversationId.value
+      await streamSSE(
+        API_ENDPOINTS.ERRORS.RETRY(activeConversationId.value),
+        { continuationQuestion: query }
+      )
+    } else {
+      await streamSSE(API_ENDPOINTS.ERRORS.ASK, { question: query })
+    }
   } catch (error: any) {
     messages.value.push({
       role: 'assistant',
