@@ -9,6 +9,7 @@ using CassMach.Domain.Entities;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Text.Json;
 
 namespace CassMach.API.Controllers
@@ -179,7 +180,7 @@ namespace CassMach.API.Controllers
 
         [HttpPost("{conversationId:guid}/retry")]
         [Authorize(Policy = "errors.create")]
-        public async Task RetryQuestion(Guid conversationId)
+        public async Task RetryQuestion(Guid conversationId, [FromBody] RetryQuestionDto? dto)
         {
             var userId = GetCurrentUserId();
 
@@ -214,6 +215,38 @@ namespace CassMach.API.Controllers
 
                 var firstAttempt = existingAttempts[0];
 
+                // Mevcut kayıttaki bilgileri al
+                var brand = firstAttempt.Brand;
+                var model = firstAttempt.Model;
+                var errorCode = firstAttempt.ErrorCode;
+                var symptom = firstAttempt.Symptom;
+
+                // Eğer enrichment body'si geldiyse merge et
+                if (dto != null && !dto.SkipEnrichment)
+                {
+                    if (!string.IsNullOrWhiteSpace(dto.Brand)) brand = dto.Brand;
+                    if (!string.IsNullOrWhiteSpace(dto.Model)) model = dto.Model;
+                    if (!string.IsNullOrWhiteSpace(dto.ErrorCode)) errorCode = dto.ErrorCode;
+                    if (!string.IsNullOrWhiteSpace(dto.Symptom)) symptom = dto.Symptom;
+                }
+
+                // Body gelmemiş (ilk retry tıklaması) VE eksik alan var mı kontrol et
+                var isFirstRetryClick = dto == null;
+                if (isFirstRetryClick)
+                {
+                    var missingFields = new List<string>();
+                    if (string.IsNullOrWhiteSpace(brand)) missingFields.Add("brand");
+                    if (string.IsNullOrWhiteSpace(model)) missingFields.Add("model");
+                    if (string.IsNullOrWhiteSpace(errorCode)) missingFields.Add("errorCode");
+                    if (string.IsNullOrWhiteSpace(symptom)) missingFields.Add("symptom");
+
+                    if (missingFields.Count > 0)
+                    {
+                        await WriteSSEEvent(new { type = "needs_info", missingFields });
+                        return;
+                    }
+                }
+
                 var previousResponses = existingAttempts
                     .Where(a => !a.FromCache)
                     .Select(a => a.AiResponse)
@@ -223,8 +256,7 @@ namespace CassMach.API.Controllers
                 int inputTokens = 0, outputTokens = 0;
 
                 await foreach (var streamResult in _claudeService.StreamRetrySolution(
-                    firstAttempt.UserQuestion, firstAttempt.Brand, firstAttempt.Model,
-                    firstAttempt.ErrorCode, firstAttempt.Symptom, previousResponses))
+                    firstAttempt.UserQuestion, brand, model, errorCode, symptom, previousResponses))
                 {
                     if (!streamResult.IsDone)
                     {
@@ -244,7 +276,7 @@ namespace CassMach.API.Controllers
                     _unitOfWork.ErrorSolutions.Update(attempt);
                 }
 
-                await _tokenService.ChargeForAiResponse(userId, inputTokens, outputTokens, conversationId, $"Retry: {firstAttempt.Brand} {firstAttempt.ErrorCode}");
+                await _tokenService.ChargeForAiResponse(userId, inputTokens, outputTokens, conversationId, $"Retry: {brand} {errorCode}");
 
                 var multiplierSetting = await _unitOfWork.SystemSettings.GetByKey("token_multiplier");
                 var multiplier = decimal.Parse(multiplierSetting.Value);
@@ -255,10 +287,10 @@ namespace CassMach.API.Controllers
                     UserId = userId,
                     ConversationId = conversationId,
                     UserQuestion = firstAttempt.UserQuestion,
-                    Brand = firstAttempt.Brand,
-                    Model = firstAttempt.Model,
-                    ErrorCode = firstAttempt.ErrorCode,
-                    Symptom = firstAttempt.Symptom,
+                    Brand = brand ?? string.Empty,
+                    Model = model,
+                    ErrorCode = errorCode,
+                    Symptom = symptom,
                     AiResponse = fullResponse.ToString(),
                     AttemptNumber = currentAttempt + 1,
                     FromCache = false,

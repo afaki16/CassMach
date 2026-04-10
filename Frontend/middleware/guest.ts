@@ -6,8 +6,8 @@ export default defineNuxtRouteMiddleware(async () => {
     await authStore.initializeAuth()
   }
 
-  // If user is authenticated, redirect to dashboard
+  // If user is authenticated, redirect to error-assistant
   if (authStore.isAuthenticated) {
-    return navigateTo('/dashboard')
+    return navigateTo('/error-assistant')
   }
 }) 

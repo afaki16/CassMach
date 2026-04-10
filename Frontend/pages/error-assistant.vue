@@ -120,7 +120,7 @@
             <v-icon size="24" color="white">mdi-robot-happy-outline</v-icon>
           </div>
 
-          <!-- System Message (retry divider, done stats) -->
+          <!-- System Message (retry divider, done stats, needs_info form) -->
           <div v-if="msg.role === 'system'" class="chat-system-msg">
             <div v-if="msg.meta?.type === 'retry-divider'" class="retry-divider">
               <div class="retry-divider-line"></div>
@@ -129,6 +129,48 @@
                 Tekrar #{{ msg.meta.attempt }}
               </span>
               <div class="retry-divider-line"></div>
+            </div>
+            <div v-else-if="msg.meta?.type === 'needs_info'" class="needs-info-card">
+              <template v-if="!msg.meta.isSubmitted">
+                <div class="needs-info-header">
+                  <v-icon size="16" color="#2563eb">mdi-information-outline</v-icon>
+                  <span>Size daha iyi yardımcı olabilmem için aşağıdaki bilgileri paylaşır mısınız?</span>
+                </div>
+                <div class="needs-info-fields">
+                  <div v-for="field in msg.meta.missingFields" :key="field" class="needs-info-field">
+                    <label class="needs-info-label">{{ fieldLabel(field) }}</label>
+                    <input
+                      v-model="enrichmentForm[field]"
+                      :placeholder="fieldPlaceholder(field)"
+                      class="needs-info-input"
+                    />
+                  </div>
+                </div>
+                <div class="needs-info-actions">
+                  <button
+                    class="action-btn action-btn--retry"
+                    @click="handleEnrichmentSkip(msg.meta.conversationId, msg)"
+                    :disabled="isLoading"
+                  >
+                    <v-icon size="16">mdi-skip-next</v-icon>
+                    Atla, yine de dene
+                  </button>
+                  <button
+                    class="action-btn action-btn--accept"
+                    @click="handleEnrichmentSubmit(msg.meta.conversationId, msg)"
+                    :disabled="isLoading"
+                  >
+                    <v-icon size="16">mdi-send</v-icon>
+                    Gönder ve Dene
+                  </button>
+                </div>
+              </template>
+              <template v-else>
+                <div class="needs-info-submitted">
+                  <v-icon size="14" color="#16a34a">mdi-check-circle</v-icon>
+                  <span>Bilgiler gönderildi</span>
+                </div>
+              </template>
             </div>
             <div v-else-if="msg.meta?.type === 'done'" class="done-msg">
               <div v-if="msg.meta.isHistory && msg.meta.isAccepted === true" class="done-stats">
@@ -237,7 +279,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { API_ENDPOINTS } from '~/utils/apiEndpoints'
 
@@ -265,6 +307,8 @@ const textareaRef = ref<HTMLTextAreaElement | null>(null)
 const mirrorRef = ref<HTMLElement | null>(null)
 const currentStreamText = ref('')
 const currentStreamingIndex = ref(-1)
+const currentRetryConversationId = ref<string | null>(null)
+const enrichmentForm = reactive<Record<string, string>>({ brand: '', model: '', errorCode: '', symptom: '' })
 
 const templateQuestions = [
   { icon: 'mdi-alert-circle-outline', title: 'Fanuc Alarm 414', color: 'red', query: 'Fanuc alarm 414 nedir ve nasıl çözülür?' },
@@ -504,6 +548,24 @@ const handleSSEEvent = (event: any) => {
     case 'parse':
       break
 
+    case 'needs_info':
+      enrichmentForm.brand = ''
+      enrichmentForm.model = ''
+      enrichmentForm.errorCode = ''
+      enrichmentForm.symptom = ''
+      messages.value.push({
+        role: 'system',
+        content: '',
+        meta: {
+          type: 'needs_info',
+          missingFields: event.missingFields,
+          conversationId: currentRetryConversationId.value,
+          isSubmitted: false
+        }
+      })
+      scrollToBottom()
+      break
+
     case 'chunk':
       currentStreamText.value += event.text
       if (currentStreamingIndex.value >= 0 && currentStreamingIndex.value < messages.value.length) {
@@ -568,6 +630,7 @@ const handleAsk = async () => {
 }
 
 const handleRetry = async (conversationId: string) => {
+  currentRetryConversationId.value = conversationId
   currentStreamText.value = ''
   currentStreamingIndex.value = -1
   isLoading.value = true
@@ -582,6 +645,62 @@ const handleRetry = async (conversationId: string) => {
     isLoading.value = false
     scrollToBottom()
   }
+}
+
+const handleEnrichmentSubmit = async (conversationId: string, msg: ChatMessage) => {
+  msg.meta!.isSubmitted = true
+  const body: Record<string, any> = {}
+  if (enrichmentForm.brand) body.brand = enrichmentForm.brand
+  if (enrichmentForm.model) body.model = enrichmentForm.model
+  if (enrichmentForm.errorCode) body.errorCode = enrichmentForm.errorCode
+  if (enrichmentForm.symptom) body.symptom = enrichmentForm.symptom
+
+  currentStreamText.value = ''
+  currentStreamingIndex.value = -1
+  isLoading.value = true
+  try {
+    await streamSSE(API_ENDPOINTS.ERRORS.RETRY(conversationId), body)
+  } catch {
+    messages.value.push({ role: 'assistant', content: 'Tekrar denemede hata oluştu.' })
+  } finally {
+    isLoading.value = false
+    scrollToBottom()
+  }
+}
+
+const handleEnrichmentSkip = async (conversationId: string, msg: ChatMessage) => {
+  msg.meta!.isSubmitted = true
+  currentStreamText.value = ''
+  currentStreamingIndex.value = -1
+  isLoading.value = true
+  try {
+    await streamSSE(API_ENDPOINTS.ERRORS.RETRY(conversationId), { skipEnrichment: true })
+  } catch {
+    messages.value.push({ role: 'assistant', content: 'Tekrar denemede hata oluştu.' })
+  } finally {
+    isLoading.value = false
+    scrollToBottom()
+  }
+}
+
+const fieldLabel = (field: string) => {
+  const labels: Record<string, string> = {
+    brand: 'Marka',
+    model: 'Model',
+    errorCode: 'Hata Kodu',
+    symptom: 'Belirti / Semptom'
+  }
+  return labels[field] ?? field
+}
+
+const fieldPlaceholder = (field: string) => {
+  const placeholders: Record<string, string> = {
+    brand: 'örn. Siemens, Fanuc, Lenze...',
+    model: 'örn. 840D, 0i-F, 8400...',
+    errorCode: 'örn. F30001, Alarm 414...',
+    symptom: 'örn. Kırmızı ışık yanıyor, ekran donuyor...'
+  }
+  return placeholders[field] ?? ''
 }
 
 const handleNotSatisfied = async (conversationId: string) => {
@@ -999,6 +1118,83 @@ useHead({ title: 'Hata Asistanı - CassMach' })
   font-weight: 600;
   color: #94a3b8;
   white-space: nowrap;
+}
+
+.needs-info-card {
+  background: white;
+  border: 1px solid #bfdbfe;
+  border-left: 4px solid #2563eb;
+  border-radius: 12px;
+  padding: 16px 20px;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.needs-info-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #1e40af;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.needs-info-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.needs-info-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.needs-info-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.needs-info-input {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  color: #1e293b;
+  background: #f8fafc;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.needs-info-input:focus {
+  border-color: #2563eb;
+  background: white;
+}
+
+.needs-info-input::placeholder {
+  color: #94a3b8;
+}
+
+.needs-info-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.needs-info-submitted {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #16a34a;
+  font-weight: 500;
 }
 
 .done-msg {

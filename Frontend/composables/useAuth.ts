@@ -87,7 +87,7 @@ export const useAuth = () => {
         } catch (e) {
           console.warn('Could not fetch full user after login, using login response:', e)
         }
-        await router.push('/dashboard')
+        await router.push('/error-assistant')
         return loginData
       } else {
         throw new Error('Invalid login response format')

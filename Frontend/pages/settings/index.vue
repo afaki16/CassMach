@@ -3,7 +3,7 @@
     <!-- Breadcrumb -->
     <div class="mb-6">
       <BreadCrumb :items="[
-        { text: 'Ana Sayfa', to: '/dashboard' },
+        { text: 'Ana Sayfa', to: '/error-assistant' },
         { text: 'Ayarlar' }
       ]" />
     </div>

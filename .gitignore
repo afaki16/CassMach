@@ -22,3 +22,11 @@
 # OS
 .DS_Store
 Thumbs.db
+
+Backend/CassMach.API/CassMach.API.csproj.lscache
+
+Backend/CassMach.Application/CassMach.Application.csproj.lscache
+
+Backend/CassMach.Domain/CassMach.Domain.csproj.lscache
+
+Backend/CassMach.Infrastructure/CassMach.Infrastructure.csproj.lscache

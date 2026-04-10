@@ -50,7 +50,15 @@ public class ErrorSolutionRepository : RepositoryBase<ErrorSolution, int>, IErro
                 e.UserQuestion.ToLower().Contains(term));
         }
 
-        return await query
+        var matchingConversationIds = query.Select(e => e.ConversationId).Distinct();
+
+        var latestIds = _context.Set<ErrorSolution>()
+            .Where(e => e.UserId == userId && matchingConversationIds.Contains(e.ConversationId))
+            .GroupBy(e => e.ConversationId)
+            .Select(g => g.Max(e => e.Id));
+
+        return await _context.Set<ErrorSolution>()
+            .Where(e => latestIds.Contains(e.Id))
             .OrderByDescending(e => e.CreatedDate)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
@@ -71,6 +79,9 @@ public class ErrorSolutionRepository : RepositoryBase<ErrorSolution, int>, IErro
                 e.UserQuestion.ToLower().Contains(term));
         }
 
-        return await query.CountAsync();
+        return await query
+            .Select(e => e.ConversationId)
+            .Distinct()
+            .CountAsync();
     }
 }

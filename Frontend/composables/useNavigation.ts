@@ -2,19 +2,6 @@
 
   export const navigationItems: NavigationItem[] = [
     {
-      title: 'Dashboard',
-      icon: 'mdi-view-dashboard',
-      children: [
-        {
-           title: 'Dashboard',
-      icon: 'mdi-view-dashboard',
-      to: '/dashboard',
-        }
-        
-      ]
-    },
-    
-    {
       title: 'AI Assistant',
       icon: 'mdi-robot-happy-outline',
       children: [

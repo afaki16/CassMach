@@ -13,9 +13,9 @@ export default defineNuxtRouteMiddleware(async (to) => {
   const publicRoutes = ['/auth/register', '/']
   
   if (publicRoutes.includes(to.path)) {
-    // If user is already authenticated and trying to access auth pages, redirect to dashboard
+    // If user is already authenticated and trying to access auth pages, redirect to error-assistant
     if (authStore.isAuthenticated && to.path.startsWith('/auth/')) {
-      return navigateTo('/dashboard')
+      return navigateTo('/error-assistant')
     }
     return
   }
