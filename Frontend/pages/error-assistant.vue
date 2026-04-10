@@ -410,20 +410,60 @@ const fetchBalance = async () => {
   }
 }
 
+const escapeHtml = (raw: string) =>
+  raw
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+
+const isTableRow = (line: string) => /^\s*\|.+\|\s*$/.test(line)
+const isSeparatorRow = (line: string) => /^\s*\|[\s\-|:]+\|\s*$/.test(line)
+
+const parseTableRow = (line: string) =>
+  line.split('|').slice(1, -1).map(cell => escapeHtml(cell.trim()))
+
+const flushTable = (tableLines: string[], html: string[]) => {
+  if (tableLines.length === 0) return
+  html.push('<div class="md-table-wrap"><table class="md-table">')
+  let headerDone = false
+  for (const tLine of tableLines) {
+    if (isSeparatorRow(tLine)) { headerDone = true; continue }
+    const cells = parseTableRow(tLine)
+    if (!headerDone) {
+      html.push('<thead><tr>' + cells.map(c => `<th>${c}</th>`).join('') + '</tr></thead><tbody>')
+      headerDone = true
+    } else {
+      html.push('<tr>' + cells.map(c => `<td>${c}</td>`).join('') + '</tr>')
+    }
+  }
+  html.push('</tbody></table></div>')
+  tableLines.length = 0
+}
+
 const formatMessage = (text: string) => {
   if (!text) return ''
 
   const lines = text.split('\n')
   const html: string[] = []
   let inList = false
+  const tableBuffer: string[] = []
 
   for (const rawLine of lines) {
-    const line = rawLine
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-      .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // Tablo satırı
+    if (isTableRow(rawLine)) {
+      if (inList) { html.push('</ul>'); inList = false }
+      tableBuffer.push(rawLine)
+      continue
+    }
+
+    // Tablo bitti, flush et
+    if (tableBuffer.length > 0) {
+      flushTable(tableBuffer, html)
+    }
+
+    const line = escapeHtml(rawLine)
 
     if (/^#{4,}\s+(.+)/.test(line)) {
       if (inList) { html.push('</ul>'); inList = false }
@@ -451,6 +491,8 @@ const formatMessage = (text: string) => {
       html.push(`<p class="md-p">${line}</p>`)
     }
   }
+
+  if (tableBuffer.length > 0) flushTable(tableBuffer, html)
   if (inList) html.push('</ul>')
 
   return html.join('')
@@ -1040,6 +1082,44 @@ useHead({ title: 'Hata Asistanı - CassMach' })
 
 .chat-text :deep(.md-p) {
   margin: 2px 0;
+}
+
+.chat-text :deep(.md-table-wrap) {
+  overflow-x: auto;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.chat-text :deep(.md-table) {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.chat-text :deep(.md-table th) {
+  background: #f1f5f9;
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #475569;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.chat-text :deep(.md-table td) {
+  padding: 7px 12px;
+  color: #1e293b;
+  border-bottom: 1px solid #f1f5f9;
+  vertical-align: top;
+}
+
+.chat-text :deep(.md-table tr:last-child td) {
+  border-bottom: none;
+}
+
+.chat-text :deep(.md-table tr:hover td) {
+  background: #f8fafc;
 }
 
 .chat-text :deep(code) {
