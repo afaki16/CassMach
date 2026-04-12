@@ -440,7 +440,7 @@
 
     <!-- Footer -->
     <div class="ai-footer">
-      <p>CassMach AI — Makine Hata Kodu Asistanı</p>
+      <p>Zeror AI — Makine Hata Kodu Asistanı</p>
     </div>
 
   </div>

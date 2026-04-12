@@ -25,6 +25,24 @@
         },
       ]
     },
+      {
+      title: 'Admin Yönetimi',
+      icon: 'mdi-shield-crown-outline',
+      children: [
+        {
+          title: 'Makine Kataloğu',
+          icon: 'mdi-format-list-bulleted',
+          to: '/machines',
+          permission: 'Machines.Create'
+        },
+        {
+          title: 'AI Kullanım Yönetimi',
+          icon: 'mdi-chart-box-outline',
+          to: '/admin-ai',
+          permission: 'AdminPanel.Read'
+        }
+      ]
+    },
     {
       title: 'User Management',
       icon: 'mdi-account-group',
@@ -61,24 +79,7 @@
       to: '/settings',
       roles: ['Admin', 'SuperAdmin']
     },
-    {
-      title: 'Admin Yönetimi',
-      icon: 'mdi-shield-crown-outline',
-      children: [
-        {
-          title: 'Makine Kataloğu',
-          icon: 'mdi-format-list-bulleted',
-          to: '/machines',
-          permission: 'Machines.Create'
-        },
-        {
-          title: 'AI Kullanım Yönetimi',
-          icon: 'mdi-chart-box-outline',
-          to: '/admin-ai',
-          permission: 'AdminPanel.Read'
-        }
-      ]
-    },
+  
   ]
 
   export const filterNavigationByPermissions = (
