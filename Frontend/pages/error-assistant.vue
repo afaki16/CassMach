@@ -69,7 +69,7 @@
               <div v-if="machines.length === 0" class="machine-picker-empty">
                 <v-icon size="28" color="#cbd5e1">mdi-robot-industrial-outline</v-icon>
                 <span>Henüz makine eklenmemiş</span>
-                <NuxtLink to="/machines" class="machine-picker-add-btn" @click="machineDropdownOpen = false">
+                <NuxtLink to="/my-machines" class="machine-picker-add-btn" @click="machineDropdownOpen = false">
                   <v-icon size="14">mdi-plus</v-icon> Makine Ekle
                 </NuxtLink>
               </div>
@@ -451,7 +451,7 @@ import { ref, reactive, computed, nextTick, watch, onMounted, onBeforeUnmount } 
 import { onClickOutside } from '@vueuse/core'
 import { useAuthStore } from '~/stores/auth'
 import { API_ENDPOINTS } from '~/utils/apiEndpoints'
-import type { Machine } from '~/types'
+import type { UserMachine } from '~/types'
 
 definePageMeta({
   middleware: ['auth', 'permission'],
@@ -490,10 +490,10 @@ const templateQuestions = [
 
 const { get, post, patch } = useApi()
 const toast = useToast()
-const { getMachines } = useMachines()
+const { getMyMachines } = useUserMachines()
 
 // Makine seçimi state
-const machines = ref<Machine[]>([])
+const machines = ref<UserMachine[]>([])
 const selectedMachineId = ref<number | null>(null)
 const selectedMachine = computed(() => machines.value.find(m => m.id === selectedMachineId.value) ?? null)
 const machineDropdownOpen = ref(false)
@@ -504,7 +504,7 @@ onClickOutside(machinePickerChatRef, () => { machineDropdownOpen.value = false }
 
 const fetchMachines = async () => {
   try {
-    machines.value = await getMachines()
+    machines.value = await getMyMachines()
   } catch {
     machines.value = []
   }

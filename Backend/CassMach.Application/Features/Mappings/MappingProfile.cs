@@ -26,6 +26,7 @@ using CassMach.Application.Features.Tenants.Commands.DeleteTenant;
 using CassMach.Application.Features.Errors.Dtos;
 using CassMach.Application.Features.Admin.Dtos;
 using CassMach.Application.Features.Machines.Dtos;
+using CassMach.Application.Features.UserMachines.Dtos;
 using CassMach.Domain.Entities;
 using CassMach.Domain.Common.Enums;
 namespace CassMach.Application.Features.Mappings;
@@ -155,6 +156,11 @@ namespace CassMach.Application.Features.Mappings;
 
         // Machine mappings
         CreateMap<Machine, MachineDto>();
+
+        // UserMachine mappings
+        CreateMap<UserMachine, UserMachineDto>()
+            .ForMember(dest => dest.Brand, opt => opt.MapFrom(src => src.Machine.Brand))
+            .ForMember(dest => dest.Model, opt => opt.MapFrom(src => src.Machine.Model));
     }
     }
 

@@ -2,16 +2,16 @@
   <div class="mb-6">
     <BreadCrumb :items="[
       { text: 'Ana Sayfa', to: '/' },
-      { text: 'Makinelerim' }
+      { text: 'Makine Kataloğu' }
     ]" />
   </div>
 
   <BaseDataTable
     :items="items"
     :columns="tableColumns"
-    title="Makinelerim"
+    title="Makine Kataloğu"
     toolbar-icon="mdi-robot-industrial"
-    search-placeholder="Makine ara..."
+    search-placeholder="Marka veya model ara..."
     add-button-text="Makine Ekle"
     :loading="isLoading"
     loading-text="Makineler yükleniyor..."
@@ -26,20 +26,15 @@
     @delete="openDeleteDialog"
     @search="handleSearch"
     @refresh="refreshData"
-  >
-    <template #cell-name="{ value }">
-      <span v-if="value" class="font-weight-medium">{{ value }}</span>
-      <span v-else class="text-medium-emphasis text-caption">—</span>
-    </template>
-  </BaseDataTable>
+  />
 
   <!-- Create/Edit Drawer -->
   <ResizableDrawer
     v-model="dialogs.create"
     :title="isEditMode ? 'Makine Düzenle' : 'Makine Ekle'"
     icon="mdi-robot-industrial"
-    :default-width="480"
-    :min-width="380"
+    :default-width="420"
+    :min-width="350"
   >
     <MachineForm
       :machine="selectedItem"
@@ -53,7 +48,7 @@
   <ConfirmDialog
     v-model="dialogs.delete"
     title="Makineyi Sil"
-    :message="`'${itemToDelete?.brand} ${itemToDelete?.model}' makinesini silmek istediğinizden emin misiniz?`"
+    :message="`'${itemToDelete?.brand} ${itemToDelete?.model}' makinesini katalogdan silmek istediğinizden emin misiniz?`"
     type="error"
     confirm-text="Sil"
     :loading="isDeleting"
@@ -74,14 +69,13 @@ definePageMeta({
   permission: 'Machines.Read'
 })
 
-useHead({ title: 'Makinelerim - CassMach' })
+useHead({ title: 'Makine Kataloğu - CassMach' })
 //#endregion
 
 //#region DataTable Columns
 const tableColumns = [
-  { label: 'Marka', key: 'brand', sortable: true, filterable: true, filterType: 'text', width: '180px' },
-  { label: 'Model', key: 'model', sortable: true, filterable: true, filterType: 'text', width: '180px' },
-  { label: 'Makine Adı', key: 'name', sortable: true, width: '220px' },
+  { label: 'Marka', key: 'brand', sortable: true, filterable: true, filterType: 'text', width: '200px' },
+  { label: 'Model', key: 'model', sortable: true, filterable: true, filterType: 'text', width: '200px' },
 ]
 //#endregion
 

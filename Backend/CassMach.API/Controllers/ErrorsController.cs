@@ -60,16 +60,16 @@ namespace CassMach.API.Controllers
 
                 if (hasMachine)
                 {
-                    // Makine seçildi → DB'den brand/model çek, parse etme
-                    var machine = await _unitOfWork.Machines.GetByIdAndUserId(dto.MachineId.Value, userId);
-                    if (machine == null)
+                    // Makine seçildi → UserMachines üzerinden brand/model çek, parse etme
+                    var userMachine = await _unitOfWork.UserMachines.GetByIdAndUserId(dto.MachineId.Value, userId);
+                    if (userMachine == null)
                     {
                         await WriteSSEEvent(new { type = "error", message = "Seçilen makine bulunamadı" });
                         return;
                     }
-                    machineId = machine.Id;
-                    brand = machine.Brand;
-                    model = machine.Model;
+                    machineId = userMachine.MachineId;
+                    brand = userMachine.Machine.Brand;
+                    model = userMachine.Machine.Model;
                     // Hata kodu ve belirti sorudan çıkarılır (kısa parse, sadece errorCode+symptom)
                     var quickParse = await _claudeService.ParseUserQuestion(dto.Question);
                     errorCode = quickParse.ErrorCode;

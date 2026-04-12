@@ -97,5 +97,7 @@ export type {
 export type {
   Machine,
   CreateMachineRequest,
-  UpdateMachineRequest
+  UpdateMachineRequest,
+  UserMachine,
+  AddUserMachineRequest
 } from './machine'

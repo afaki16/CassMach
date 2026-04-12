@@ -4,7 +4,7 @@ import { API_ENDPOINTS } from '~/utils/apiEndpoints'
 export const useMachines = () => {
   const api = useApi()
 
-  //#region GET - Kullanıcının makineleri
+  //#region GET - Tüm makine kataloğu
   const getMachines = async () => {
     try {
       const response: any = await api.get<Machine[]>(API_ENDPOINTS.MACHINES.LIST)
@@ -19,7 +19,7 @@ export const useMachines = () => {
   }
   //#endregion
 
-  //#region POST - Makine ekle
+  //#region POST - Kataloğa makine ekle (admin)
   const createMachine = async (data: CreateMachineRequest) => {
     try {
       const response: any = await api.post<Machine>(API_ENDPOINTS.MACHINES.CREATE, data)
@@ -31,7 +31,7 @@ export const useMachines = () => {
   }
   //#endregion
 
-  //#region PUT - Makine güncelle
+  //#region PUT - Makine güncelle (admin)
   const updateMachine = async (id: number, data: UpdateMachineRequest) => {
     try {
       const response: any = await api.put<Machine>(API_ENDPOINTS.MACHINES.UPDATE(id), data)
@@ -43,7 +43,7 @@ export const useMachines = () => {
   }
   //#endregion
 
-  //#region DELETE - Makine sil
+  //#region DELETE - Makine sil (admin)
   const deleteMachine = async (id: number) => {
     try {
       await api.delete(API_ENDPOINTS.MACHINES.DELETE(id))

@@ -21,14 +21,13 @@ namespace CassMach.Application.Features.Machines.Commands.UpdateMachine
 
         public async Task<Result<MachineDto>> Handle(UpdateMachineCommand request, CancellationToken cancellationToken)
         {
-            var machine = await _unitOfWork.Machines.GetByIdAndUserId(request.Id, request.UserId);
+            var machine = await _unitOfWork.Machines.GetByIdAsync(request.Id);
 
             if (machine == null)
                 return Result<MachineDto>.Failure(Error.Failure(ErrorCode.NotFound, "Makine bulunamadı"));
 
             machine.Brand = request.Brand.Trim();
             machine.Model = request.Model.Trim();
-            machine.Name = request.Name?.Trim();
 
             _unitOfWork.Machines.Update(machine);
             await _unitOfWork.SaveChangesAsync();

@@ -82,12 +82,19 @@ export const API_ENDPOINTS = {
     DASHBOARD: '/api/admin/ai/dashboard'
   },
 
-  // Machine management endpoints
+  // Machine catalog endpoints (admin only for write)
   MACHINES: {
     LIST: '/api/machines',
     CREATE: '/api/machines',
     UPDATE: (id: number) => `/api/machines/${id}`,
     DELETE: (id: number) => `/api/machines/${id}`,
+  },
+
+  // User machine assignment endpoints
+  USER_MACHINES: {
+    LIST: '/api/usermachines',
+    ADD: '/api/usermachines',
+    REMOVE: (id: number) => `/api/usermachines/${id}`,
   },
 
   // Dashboard endpoints

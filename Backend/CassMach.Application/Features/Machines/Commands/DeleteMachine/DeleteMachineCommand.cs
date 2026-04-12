@@ -6,6 +6,5 @@ namespace CassMach.Application.Features.Machines.Commands.DeleteMachine
     public class DeleteMachineCommand : IRequest<Result<bool>>
     {
         public int Id { get; set; }
-        public int UserId { get; set; }
     }
 }

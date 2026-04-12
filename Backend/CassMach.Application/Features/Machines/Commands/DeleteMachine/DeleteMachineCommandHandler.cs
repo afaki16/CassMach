@@ -17,7 +17,7 @@ namespace CassMach.Application.Features.Machines.Commands.DeleteMachine
 
         public async Task<Result<bool>> Handle(DeleteMachineCommand request, CancellationToken cancellationToken)
         {
-            var machine = await _unitOfWork.Machines.GetByIdAndUserId(request.Id, request.UserId);
+            var machine = await _unitOfWork.Machines.GetByIdAsync(request.Id);
 
             if (machine == null)
                 return Result<bool>.Failure(Error.Failure(ErrorCode.NotFound, "Makine bulunamadı"));

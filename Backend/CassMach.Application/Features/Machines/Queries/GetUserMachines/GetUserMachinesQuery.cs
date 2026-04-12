@@ -4,8 +4,7 @@ using MediatR;
 
 namespace CassMach.Application.Features.Machines.Queries.GetUserMachines
 {
-    public class GetUserMachinesQuery : IRequest<Result<IEnumerable<MachineDto>>>
+    public class GetMachinesQuery : IRequest<Result<IEnumerable<MachineDto>>>
     {
-        public int UserId { get; set; }
     }
 }

@@ -14,19 +14,10 @@ namespace CassMach.Infrastructure.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<IEnumerable<Machine>> GetByUserId(int userId)
+        public async Task<bool> ExistsByBrandAndModel(string brand, string model)
         {
             return await _context.Set<Machine>()
-                .Where(m => m.UserId == userId)
-                .OrderBy(m => m.Brand)
-                .ThenBy(m => m.Model)
-                .ToListAsync();
-        }
-
-        public async Task<Machine?> GetByIdAndUserId(int id, int userId)
-        {
-            return await _context.Set<Machine>()
-                .FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId);
+                .AnyAsync(m => m.Brand.ToLower() == brand.ToLower() && m.Model.ToLower() == model.ToLower());
         }
     }
 }

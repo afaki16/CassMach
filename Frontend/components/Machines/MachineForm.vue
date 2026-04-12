@@ -19,18 +19,6 @@
           :rules="[rules.required, rules.maxLength(100)]"
           variant="outlined"
           density="comfortable"
-          class="mb-2"
-        />
-
-        <v-text-field
-          v-model="formData.name"
-          label="Makine Adı (opsiyonel)"
-          placeholder="Fabrika 1 - Torna"
-          :rules="[rules.maxLength(150)]"
-          variant="outlined"
-          density="comfortable"
-          hint="Birden fazla makineniz varsa ayırt etmek için isim verin"
-          persistent-hint
         />
       </v-card-text>
 
@@ -64,7 +52,6 @@ const formRef = ref()
 const formData = ref({
   brand: '',
   model: '',
-  name: '',
 })
 
 const rules = {
@@ -77,10 +64,9 @@ watch(() => props.machine, (val) => {
     formData.value = {
       brand: val.brand || '',
       model: val.model || '',
-      name: val.name || '',
     }
   } else {
-    formData.value = { brand: '', model: '', name: '' }
+    formData.value = { brand: '', model: '' }
   }
 }, { immediate: true })
 
@@ -91,7 +77,6 @@ const submitForm = async () => {
     data: {
       brand: formData.value.brand.trim(),
       model: formData.value.model.trim(),
-      name: formData.value.name?.trim() || undefined,
     }
   })
 }

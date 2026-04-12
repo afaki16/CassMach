@@ -178,7 +178,11 @@ namespace CassMach.Infrastructure.Persistence
             {
                 var userNames = Permissions.Helper.GetPermissionsByResource("Users");
                 var errorsNames = Permissions.Helper.GetPermissionsByResource("Errors");
-                var allowed = userNames.Concat(errorsNames).ToHashSet(StringComparer.OrdinalIgnoreCase);
+                var userMachinesNames = Permissions.Helper.GetPermissionsByResource("UserMachines");
+                var allowed = userNames
+                    .Concat(errorsNames)
+                    .Concat(userMachinesNames)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
                 var ids = allPermissions.Where(p => allowed.Contains(p.Name)).Select(p => p.Id);
                 AddMissingRolePermissions(context, userRole.Id, ids);
             }
@@ -257,9 +261,15 @@ namespace CassMach.Infrastructure.Persistence
             await context.RolePermissions.AddRangeAsync(superAdminRolePermissions);
             await context.RolePermissions.AddRangeAsync(adminRolePermissions);
 
-            // Get only Users permissions and assign to user role
+            // Get permissions for standard user role
             var userPermissionNames = Permissions.Helper.GetPermissionsByResource("Users");
-            var userPermissions = allPermissions.Where(p => userPermissionNames.Contains(p.Name)).ToList();
+            var errorsPermissionNames = Permissions.Helper.GetPermissionsByResource("Errors");
+            var userMachinesPermissionNames = Permissions.Helper.GetPermissionsByResource("UserMachines");
+            var allowedUserPermissions = userPermissionNames
+                .Concat(errorsPermissionNames)
+                .Concat(userMachinesPermissionNames)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var userPermissions = allPermissions.Where(p => allowedUserPermissions.Contains(p.Name)).ToList();
             var userRolePermissions = userPermissions.Select(p => new RolePermission
             {
                 RoleId = userRole.Id,

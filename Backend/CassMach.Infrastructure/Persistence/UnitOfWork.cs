@@ -22,6 +22,7 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     private readonly Lazy<ITenantRepository> _tenants;
     private readonly Lazy<IErrorSolutionRepository> _errorSolutions;
     private readonly Lazy<IMachineRepository> _machines;
+    private readonly Lazy<IUserMachineRepository> _userMachines;
     private readonly Lazy<IUserTokenBalanceRepository> _userTokenBalances;
     private readonly Lazy<ITokenTransactionRepository> _tokenTransactions;
     private readonly Lazy<ISystemSettingRepository> _systemSettings;
@@ -39,6 +40,7 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
         _tenants = new Lazy<ITenantRepository>(() => _serviceProvider.GetRequiredService<ITenantRepository>());
         _errorSolutions = new Lazy<IErrorSolutionRepository>(() => _serviceProvider.GetRequiredService<IErrorSolutionRepository>());
         _machines = new Lazy<IMachineRepository>(() => _serviceProvider.GetRequiredService<IMachineRepository>());
+        _userMachines = new Lazy<IUserMachineRepository>(() => _serviceProvider.GetRequiredService<IUserMachineRepository>());
         _userTokenBalances = new Lazy<IUserTokenBalanceRepository>(() => _serviceProvider.GetRequiredService<IUserTokenBalanceRepository>());
         _tokenTransactions = new Lazy<ITokenTransactionRepository>(() => _serviceProvider.GetRequiredService<ITokenTransactionRepository>());
         _systemSettings = new Lazy<ISystemSettingRepository>(() => _serviceProvider.GetRequiredService<ISystemSettingRepository>());
@@ -52,6 +54,7 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     public ITenantRepository Tenants => _tenants.Value;
     public IErrorSolutionRepository ErrorSolutions => _errorSolutions.Value;
     public IMachineRepository Machines => _machines.Value;
+    public IUserMachineRepository UserMachines => _userMachines.Value;
     public IUserTokenBalanceRepository UserTokenBalances => _userTokenBalances.Value;
     public ITokenTransactionRepository TokenTransactions => _tokenTransactions.Value;
     public ISystemSettingRepository SystemSettings => _systemSettings.Value;

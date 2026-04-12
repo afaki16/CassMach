@@ -4,7 +4,6 @@ namespace CassMach.Domain.Common.Interfaces.Repositories
 {
     public interface IMachineRepository : IRepository<Machine, int>
     {
-        Task<IEnumerable<Machine>> GetByUserId(int userId);
-        Task<Machine?> GetByIdAndUserId(int id, int userId);
+        Task<bool> ExistsByBrandAndModel(string brand, string model);
     }
 }

@@ -13,9 +13,6 @@ namespace CassMach.Application.Features.Machines.Commands.CreateMachine
             RuleFor(x => x.Model)
                 .NotEmpty().WithMessage("Model zorunludur")
                 .MaximumLength(100).WithMessage("Model 100 karakterden fazla olamaz");
-
-            RuleFor(x => x.Name)
-                .MaximumLength(150).WithMessage("Makine adı 150 karakterden fazla olamaz");
         }
     }
 }

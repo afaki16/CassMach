@@ -47,13 +47,21 @@ namespace CassMach.Domain.Constants
         public const string Delete = "Errors.Delete";
     }
 
-    // Machine permissions
+    // Machine catalog permissions (admin only)
     public static class Machines
     {
         public const string Read = "Machines.Read";
         public const string Create = "Machines.Create";
         public const string Update = "Machines.Update";
         public const string Delete = "Machines.Delete";
+    }
+
+    // User machine assignment permissions
+    public static class UserMachines
+    {
+        public const string Read = "UserMachines.Read";
+        public const string Create = "UserMachines.Create";
+        public const string Delete = "UserMachines.Delete";
     }
 
     // Admin panel permissions

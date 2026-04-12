@@ -14,8 +14,8 @@
         {
           title: 'Makinelerim',
           icon: 'mdi-robot-industrial',
-          to: '/machines',
-          permission: 'Machines.Read'
+          to: '/my-machines',
+          permission: 'UserMachines.Read'
         },
         {
           title: 'Geçmiş Sorgularım',
@@ -23,12 +23,6 @@
           to: '/error-history',
           permission: 'Errors.Read'
         },
-        {
-          title: 'AI Kullanım Yönetimi',
-          icon: 'mdi-chart-box-outline',
-          to: '/admin-ai',
-          permission: 'AdminPanel.Read'
-        }
       ]
     },
     {
@@ -61,7 +55,24 @@
         }
       ]
     },
-    
+    {
+      title: 'Admin Yönetimi',
+      icon: 'mdi-shield-crown-outline',
+      children: [
+        {
+          title: 'Makine Kataloğu',
+          icon: 'mdi-format-list-bulleted',
+          to: '/machines',
+          permission: 'Machines.Read'
+        },
+        {
+          title: 'AI Kullanım Yönetimi',
+          icon: 'mdi-chart-box-outline',
+          to: '/admin-ai',
+          permission: 'AdminPanel.Read'
+        }
+      ]
+    },
     {
       title: 'Settings',
       icon: 'mdi-cog',
@@ -90,4 +101,4 @@
         return { ...item }
       })
       .filter((item): item is NavigationItem => item !== null)
-  } 
+  }
