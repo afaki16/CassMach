@@ -27,6 +27,39 @@
 
       <!-- Hero Input (conversation hasn't started) -->
       <div v-if="messages.length === 0" class="ai-input-block">
+
+        <!-- Makine Seçici -->
+        <div class="machine-selector">
+          <div class="machine-selector-inner">
+            <v-icon size="16" color="#475569">mdi-robot-industrial</v-icon>
+            <select
+              v-model="selectedMachineId"
+              class="machine-select"
+            >
+              <option :value="null">Makine seçin (opsiyonel)</option>
+              <option v-for="m in machines" :key="m.id" :value="m.id">
+                {{ m.brand }} {{ m.model }}{{ m.name ? ` — ${m.name}` : '' }}
+              </option>
+            </select>
+            <NuxtLink v-if="machines.length === 0" to="/machines" class="machine-add-link">
+              <v-icon size="14">mdi-plus</v-icon> Makine Ekle
+            </NuxtLink>
+          </div>
+          <!-- 2x Uyarı -->
+          <div v-if="!selectedMachineId" class="machine-penalty-warn">
+            <v-icon size="13" color="#b45309">mdi-alert-circle-outline</v-icon>
+            <span>Makine seçilmezse sorgu <strong>2x</strong> kredi tüketir</span>
+          </div>
+          <!-- Seçili Makine Badge -->
+          <div v-else class="machine-selected-badge">
+            <v-icon size="13" color="#166534">mdi-check-circle</v-icon>
+            <span>{{ selectedMachine?.brand }} {{ selectedMachine?.model }}</span>
+            <button class="machine-clear" @click="selectedMachineId = null">
+              <v-icon size="12">mdi-close</v-icon>
+            </button>
+          </div>
+        </div>
+
         <div class="ai-input-container ai-input-container--hero">
           <div class="ai-input-wrapper ai-input-wrapper--stacked" :class="{ 'ai-input-wrapper--focused': isInputFocused }">
             <div class="ai-input-field-wrap">
@@ -240,6 +273,30 @@
         </div>
       </div>
 
+      <!-- Chat modu makine seçici -->
+      <div class="machine-selector machine-selector--chat">
+        <div class="machine-selector-inner">
+          <v-icon size="16" color="#475569">mdi-robot-industrial</v-icon>
+          <select v-model="selectedMachineId" class="machine-select">
+            <option :value="null">Makine seçin</option>
+            <option v-for="m in machines" :key="m.id" :value="m.id">
+              {{ m.brand }} {{ m.model }}{{ m.name ? ` — ${m.name}` : '' }}
+            </option>
+          </select>
+        </div>
+        <div v-if="!selectedMachineId" class="machine-penalty-warn">
+          <v-icon size="13" color="#b45309">mdi-alert-circle-outline</v-icon>
+          <span>Makine seçilmezse <strong>2x</strong> kredi</span>
+        </div>
+        <div v-else class="machine-selected-badge">
+          <v-icon size="13" color="#166534">mdi-check-circle</v-icon>
+          <span>{{ selectedMachine?.brand }} {{ selectedMachine?.model }}</span>
+          <button class="machine-clear" @click="selectedMachineId = null">
+            <v-icon size="12">mdi-close</v-icon>
+          </button>
+        </div>
+      </div>
+
       <!-- Chat Input (conversation mode) -->
       <div class="ai-input-container ai-input-container--full">
         <div class="ai-input-wrapper ai-input-wrapper--full ai-input-wrapper--stacked" :class="{ 'ai-input-wrapper--focused': isInputFocused }">
@@ -279,9 +336,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, reactive, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useAuthStore } from '~/stores/auth'
 import { API_ENDPOINTS } from '~/utils/apiEndpoints'
+import type { Machine } from '~/types'
 
 definePageMeta({
   middleware: ['auth', 'permission'],
@@ -320,6 +378,20 @@ const templateQuestions = [
 
 const { get, post, patch } = useApi()
 const toast = useToast()
+const { getMachines } = useMachines()
+
+// Makine seçimi state
+const machines = ref<Machine[]>([])
+const selectedMachineId = ref<number | null>(null)
+const selectedMachine = computed(() => machines.value.find(m => m.id === selectedMachineId.value) ?? null)
+
+const fetchMachines = async () => {
+  try {
+    machines.value = await getMachines()
+  } catch {
+    machines.value = []
+  }
+}
 
 interface HistoryItem {
   id: number
@@ -669,7 +741,9 @@ const handleAsk = async () => {
         { continuationQuestion: query }
       )
     } else {
-      await streamSSE(API_ENDPOINTS.ERRORS.ASK, { question: query })
+      const body: Record<string, any> = { question: query }
+      if (selectedMachineId.value) body.machineId = selectedMachineId.value
+      await streamSSE(API_ENDPOINTS.ERRORS.ASK, body)
     }
   } catch (error: any) {
     messages.value.push({
@@ -786,6 +860,7 @@ watch(() => messages.value.length, (len) => {
 onMounted(() => {
   fetchBalance()
   fetchLastQuery()
+  fetchMachines()
   resizeTextarea()
   window.addEventListener('resize', resizeTextarea)
   nextTick(() => textareaRef.value?.focus())
@@ -1703,5 +1778,87 @@ useHead({ title: 'Hata Asistanı - CassMach' })
   .last-query-card {
     width: 100%;
   }
+}
+
+/* ── Makine Seçici ── */
+.machine-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(15,23,42,0.04);
+}
+
+.machine-selector--chat {
+  margin: 0 0 8px;
+  border-radius: 10px;
+}
+
+.machine-selector-inner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.machine-select {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 0.85rem;
+  color: #334155;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.machine-add-link {
+  font-size: 0.78rem;
+  color: #2563eb;
+  text-decoration: none;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.machine-add-link:hover { text-decoration: underline; }
+
+.machine-penalty-warn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #b45309;
+  white-space: nowrap;
+}
+
+.machine-selected-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.75rem;
+  color: #166534;
+  background: #f0fdf4;
+  border-radius: 6px;
+  padding: 2px 8px;
+  white-space: nowrap;
+}
+
+.machine-clear {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #94a3b8;
+  display: flex;
+  padding: 0;
+  margin-left: 2px;
 }
 </style>

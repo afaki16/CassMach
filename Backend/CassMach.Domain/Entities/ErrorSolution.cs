@@ -4,12 +4,14 @@ namespace CassMach.Domain.Entities
 {
     public class ErrorSolution : BaseAuditableEntity
     {
-        public int UserId { get; set; }
+        public int? UserId { get; set; }
+        public int? MachineId { get; set; }
         public Guid ConversationId { get; set; }
         public string UserQuestion { get; set; }
         public string Brand { get; set; }
         public string? Model { get; set; }
         public string? ErrorCode { get; set; }
+        public string? ErrorDesc { get; set; }
         public string? Symptom { get; set; }
         public string AiResponse { get; set; }
         public int AttemptNumber { get; set; }
@@ -20,5 +22,6 @@ namespace CassMach.Domain.Entities
         public decimal CreditsCharged { get; set; }
 
         public User User { get; set; }
+        public Machine Machine { get; set; }
     }
 }

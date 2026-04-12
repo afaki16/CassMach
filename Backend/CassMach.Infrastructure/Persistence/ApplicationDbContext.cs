@@ -29,6 +29,7 @@ namespace CassMach.Infrastructure.Persistence
         public DbSet<ErrorSolution> ErrorSolutions { get; set; }
         public DbSet<TokenTransaction> TokenTransactions { get; set; }
         public DbSet<SystemSetting> SystemSettings { get; set; }
+        public DbSet<Machine> Machines { get; set; }
 
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

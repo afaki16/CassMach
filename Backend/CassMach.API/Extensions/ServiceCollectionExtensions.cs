@@ -122,7 +122,7 @@ namespace CassMach.API.Extensions
         private static void AddCombinedPermissionPolicies(AuthorizationOptions options)
         {
             // Read-Write policies (Read + Create + Update)
-            var readWriteResources = new[] { "Users", "Roles", "Permissions" };
+            var readWriteResources = new[] { "Users", "Roles", "Permissions", "Machines" };
             foreach (var resource in readWriteResources)
             {
                 var resourceLower = resource.ToLower();
@@ -135,7 +135,7 @@ namespace CassMach.API.Extensions
             }
 
             // Full Access policies (Read + Create + Update + Delete)
-            var fullAccessResources = new[] { "Users", "Roles", "Permissions" };
+            var fullAccessResources = new[] { "Users", "Roles", "Permissions", "Machines" };
             foreach (var resource in fullAccessResources)
             {
                 var resourceLower = resource.ToLower();

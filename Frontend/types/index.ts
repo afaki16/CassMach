@@ -92,3 +92,10 @@ export type {
   MenuItem,
   UserPreferences
 } from './common'
+
+// Machine Types
+export type {
+  Machine,
+  CreateMachineRequest,
+  UpdateMachineRequest
+} from './machine'

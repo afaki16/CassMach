@@ -47,6 +47,15 @@ namespace CassMach.Domain.Constants
         public const string Delete = "Errors.Delete";
     }
 
+    // Machine permissions
+    public static class Machines
+    {
+        public const string Read = "Machines.Read";
+        public const string Create = "Machines.Create";
+        public const string Update = "Machines.Update";
+        public const string Delete = "Machines.Delete";
+    }
+
     // Admin panel permissions
     public static class AdminPanel
     {

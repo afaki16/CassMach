@@ -82,6 +82,14 @@ export const API_ENDPOINTS = {
     DASHBOARD: '/api/admin/ai/dashboard'
   },
 
+  // Machine management endpoints
+  MACHINES: {
+    LIST: '/api/machines',
+    CREATE: '/api/machines',
+    UPDATE: (id: number) => `/api/machines/${id}`,
+    DELETE: (id: number) => `/api/machines/${id}`,
+  },
+
   // Dashboard endpoints
   DASHBOARD: {
     STATS: '/api/dashboard/stats',

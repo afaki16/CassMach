@@ -12,6 +12,12 @@
           permission: 'Errors.Read'
         },
         {
+          title: 'Makinelerim',
+          icon: 'mdi-robot-industrial',
+          to: '/machines',
+          permission: 'Machines.Read'
+        },
+        {
           title: 'Geçmiş Sorgularım',
           icon: 'mdi-history',
           to: '/error-history',

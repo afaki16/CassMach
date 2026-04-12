@@ -21,6 +21,7 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     private readonly Lazy<IRefreshTokenRepository> _refreshTokens;
     private readonly Lazy<ITenantRepository> _tenants;
     private readonly Lazy<IErrorSolutionRepository> _errorSolutions;
+    private readonly Lazy<IMachineRepository> _machines;
     private readonly Lazy<IUserTokenBalanceRepository> _userTokenBalances;
     private readonly Lazy<ITokenTransactionRepository> _tokenTransactions;
     private readonly Lazy<ISystemSettingRepository> _systemSettings;
@@ -37,6 +38,7 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
         _refreshTokens = new Lazy<IRefreshTokenRepository>(() => _serviceProvider.GetRequiredService<IRefreshTokenRepository>());
         _tenants = new Lazy<ITenantRepository>(() => _serviceProvider.GetRequiredService<ITenantRepository>());
         _errorSolutions = new Lazy<IErrorSolutionRepository>(() => _serviceProvider.GetRequiredService<IErrorSolutionRepository>());
+        _machines = new Lazy<IMachineRepository>(() => _serviceProvider.GetRequiredService<IMachineRepository>());
         _userTokenBalances = new Lazy<IUserTokenBalanceRepository>(() => _serviceProvider.GetRequiredService<IUserTokenBalanceRepository>());
         _tokenTransactions = new Lazy<ITokenTransactionRepository>(() => _serviceProvider.GetRequiredService<ITokenTransactionRepository>());
         _systemSettings = new Lazy<ISystemSettingRepository>(() => _serviceProvider.GetRequiredService<ISystemSettingRepository>());
@@ -49,6 +51,7 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
     public IRefreshTokenRepository RefreshTokens => _refreshTokens.Value;
     public ITenantRepository Tenants => _tenants.Value;
     public IErrorSolutionRepository ErrorSolutions => _errorSolutions.Value;
+    public IMachineRepository Machines => _machines.Value;
     public IUserTokenBalanceRepository UserTokenBalances => _userTokenBalances.Value;
     public ITokenTransactionRepository TokenTransactions => _tokenTransactions.Value;
     public ISystemSettingRepository SystemSettings => _systemSettings.Value;

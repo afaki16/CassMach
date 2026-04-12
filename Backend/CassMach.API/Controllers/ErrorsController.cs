@@ -54,31 +54,75 @@ namespace CassMach.API.Controllers
                     return;
                 }
 
-                var parseResult = await _claudeService.ParseUserQuestion(dto.Question);
+                string brand, model, errorCode, symptom;
+                int? machineId = null;
+                bool hasMachine = dto.MachineId.HasValue;
 
-                if (!parseResult.IsValid)
+                if (hasMachine)
                 {
-                    await WriteSSEEvent(new { type = "error", message = "Bu soru makine hatası ile ilgili değil. Sadece endüstriyel makine hatalarına cevap verebilirim." });
-                    return;
+                    // Makine seçildi → DB'den brand/model çek, parse etme
+                    var machine = await _unitOfWork.Machines.GetByIdAndUserId(dto.MachineId.Value, userId);
+                    if (machine == null)
+                    {
+                        await WriteSSEEvent(new { type = "error", message = "Seçilen makine bulunamadı" });
+                        return;
+                    }
+                    machineId = machine.Id;
+                    brand = machine.Brand;
+                    model = machine.Model;
+                    // Hata kodu ve belirti sorudan çıkarılır (kısa parse, sadece errorCode+symptom)
+                    var quickParse = await _claudeService.ParseUserQuestion(dto.Question);
+                    errorCode = quickParse.ErrorCode;
+                    symptom = quickParse.Symptom;
+
+                    await WriteSSEEvent(new { type = "parse", brand, errorCode, model });
+                }
+                else
+                {
+                    // Makine seçilmedi → tam parse
+                    var parseResult = await _claudeService.ParseUserQuestion(dto.Question);
+
+                    if (!parseResult.IsValid)
+                    {
+                        await WriteSSEEvent(new { type = "error", message = "Bu soru makine hatası ile ilgili değil. Sadece endüstriyel makine hatalarına cevap verebilirim." });
+                        return;
+                    }
+
+                    var hasBrand = !string.IsNullOrWhiteSpace(parseResult.Brand);
+                    var hasErrorCode = !string.IsNullOrWhiteSpace(parseResult.ErrorCode);
+                    var hasSymptom = !string.IsNullOrWhiteSpace(parseResult.Symptom);
+                    if (!hasBrand && !hasErrorCode && !hasSymptom)
+                    {
+                        await WriteSSEEvent(new { type = "error", message = "Lütfen makine markası, hata kodu veya belirti belirtin. Örnek: 'Lenze 5115 hatası' veya 'Siemens CNC'de kırmızı ışık yanıyor'" });
+                        return;
+                    }
+
+                    brand = parseResult.Brand;
+                    model = parseResult.Model;
+                    errorCode = parseResult.ErrorCode;
+                    symptom = parseResult.Symptom;
+
+                    await WriteSSEEvent(new { type = "parse", brand, errorCode, model });
                 }
 
-                var hasBrand = !string.IsNullOrWhiteSpace(parseResult.Brand);
-                var hasErrorCode = !string.IsNullOrWhiteSpace(parseResult.ErrorCode);
-                var hasSymptom = !string.IsNullOrWhiteSpace(parseResult.Symptom);
-                if (!hasBrand && !hasErrorCode && !hasSymptom)
-                {
-                    await WriteSSEEvent(new { type = "error", message = "Lütfen makine markası, hata kodu veya belirti belirtin. Örnek: 'Lenze 5115 hatası' veya 'Siemens CNC'de kırmızı ışık yanıyor'" });
-                    return;
-                }
-
-                await WriteSSEEvent(new { type = "parse", brand = parseResult.Brand, errorCode = parseResult.ErrorCode, model = parseResult.Model });
-
+                // Cache kontrolü
                 ErrorSolution? cachedSolution = null;
-                if (hasBrand)
-                {
-                    cachedSolution = await _unitOfWork.ErrorSolutions.GetAcceptedSolution(parseResult.Brand, parseResult.ErrorCode);
-                }
+                if (!string.IsNullOrWhiteSpace(brand))
+                    cachedSolution = await _unitOfWork.ErrorSolutions.GetAcceptedSolution(brand, errorCode);
+
                 var conversationId = Guid.NewGuid();
+
+                // Multiplier: makine seçilmediyse penalty uygulanır
+                var multiplierSetting = await _unitOfWork.SystemSettings.GetByKey("token_multiplier");
+                var baseMultiplier = decimal.Parse(multiplierSetting.Value);
+                decimal penaltyFactor = 1m;
+                if (!hasMachine)
+                {
+                    var penaltySetting = await _unitOfWork.SystemSettings.GetByKey("no_machine_penalty");
+                    if (penaltySetting != null)
+                        penaltyFactor = decimal.Parse(penaltySetting.Value);
+                }
+                var effectiveMultiplier = baseMultiplier * penaltyFactor;
 
                 if (cachedSolution != null)
                 {
@@ -89,20 +133,21 @@ namespace CassMach.API.Controllers
                         await Task.Delay(30);
                     }
 
-                    await _tokenService.ChargeForCachedResponse(userId, conversationId, $"Cache: {parseResult.Brand} {parseResult.ErrorCode}");
+                    await _tokenService.ChargeForCachedResponse(userId, conversationId, $"Cache: {brand} {errorCode}");
 
                     var dbFixedCreditSetting = await _unitOfWork.SystemSettings.GetByKey("db_fixed_credit");
-                    var creditsCharged = decimal.Parse(dbFixedCreditSetting.Value);
+                    var creditsCharged = decimal.Parse(dbFixedCreditSetting.Value) * penaltyFactor;
 
                     var cachedRecord = new Domain.Entities.ErrorSolution
                     {
                         UserId = userId,
+                        MachineId = machineId,
                         ConversationId = conversationId,
                         UserQuestion = dto.Question,
-                        Brand = parseResult.Brand ?? string.Empty,
-                        Model = parseResult.Model,
-                        ErrorCode = parseResult.ErrorCode,
-                        Symptom = parseResult.Symptom,
+                        Brand = brand ?? string.Empty,
+                        Model = model,
+                        ErrorCode = errorCode,
+                        Symptom = symptom,
                         AiResponse = cachedSolution.AiResponse,
                         AttemptNumber = 1,
                         FromCache = true,
@@ -125,7 +170,7 @@ namespace CassMach.API.Controllers
                     int inputTokens = 0, outputTokens = 0;
 
                     await foreach (var streamResult in _claudeService.StreamSolution(
-                        dto.Question, parseResult.Brand, parseResult.Model, parseResult.ErrorCode, parseResult.Symptom))
+                        dto.Question, brand, model, errorCode, symptom))
                     {
                         if (!streamResult.IsDone)
                         {
@@ -139,21 +184,20 @@ namespace CassMach.API.Controllers
                         }
                     }
 
-                    await _tokenService.ChargeForAiResponse(userId, inputTokens, outputTokens, conversationId, $"AI: {parseResult.Brand} {parseResult.ErrorCode}");
+                    await _tokenService.ChargeForAiResponse(userId, inputTokens, outputTokens, conversationId, $"AI: {brand} {errorCode}");
 
-                    var multiplierSetting = await _unitOfWork.SystemSettings.GetByKey("token_multiplier");
-                    var multiplier = decimal.Parse(multiplierSetting.Value);
-                    var creditsCharged = (inputTokens + outputTokens) * multiplier;
+                    var creditsCharged = (inputTokens + outputTokens) * effectiveMultiplier;
 
                     var aiRecord = new ErrorSolution
                     {
                         UserId = userId,
+                        MachineId = machineId,
                         ConversationId = conversationId,
                         UserQuestion = dto.Question,
-                        Brand = parseResult.Brand ?? string.Empty,
-                        Model = parseResult.Model,
-                        ErrorCode = parseResult.ErrorCode,
-                        Symptom = parseResult.Symptom,
+                        Brand = brand ?? string.Empty,
+                        Model = model,
+                        ErrorCode = errorCode,
+                        Symptom = symptom,
                         AiResponse = fullResponse.ToString(),
                         AttemptNumber = 1,
                         FromCache = false,

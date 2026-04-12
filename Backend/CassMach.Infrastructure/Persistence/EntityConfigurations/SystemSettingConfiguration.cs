@@ -31,7 +31,8 @@ namespace CassMach.Infrastructure.Persistence.EntityConfigurations
                 new SystemSetting { Key = "token_multiplier", Value = "1", UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
                 new SystemSetting { Key = "db_fixed_credit", Value = "25", UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
                 new SystemSetting { Key = "default_gift_tokens", Value = "5000", UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
-                new SystemSetting { Key = "max_retry_count", Value = "3", UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+                new SystemSetting { Key = "max_retry_count", Value = "3", UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) },
+                new SystemSetting { Key = "no_machine_penalty", Value = "2", UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
             );
         }
     }

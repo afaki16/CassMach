@@ -32,6 +32,7 @@ namespace CassMach.Domain.Entities
     public UserTokenBalance TokenBalance { get; set; }
     public ICollection<ErrorSolution> ErrorSolutions { get; set; }
     public ICollection<TokenTransaction> TokenTransactions { get; set; }
+    public ICollection<Machine> Machines { get; set; }
 
     public User()
         {
@@ -39,6 +40,7 @@ namespace CassMach.Domain.Entities
             RefreshTokens = new HashSet<RefreshToken>();
             ErrorSolutions = new HashSet<ErrorSolution>();
             TokenTransactions = new HashSet<TokenTransaction>();
+            Machines = new HashSet<Machine>();
             Status = UserStatus.Active;
             EmailConfirmed = false;
             PhoneConfirmed = false;

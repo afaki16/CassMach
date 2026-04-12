@@ -30,6 +30,9 @@ namespace CassMach.Infrastructure.Persistence.EntityConfigurations
             builder.Property(x => x.ErrorCode)
                 .HasMaxLength(50);
 
+            builder.Property(x => x.ErrorDesc)
+                .HasMaxLength(500);
+
             builder.Property(x => x.AiResponse)
                 .IsRequired();
 
@@ -54,9 +57,17 @@ namespace CassMach.Infrastructure.Persistence.EntityConfigurations
             builder.HasOne(x => x.User)
                 .WithMany(x => x.ErrorSolutions)
                 .HasForeignKey(x => x.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Restrict)
+                .IsRequired(false);
+
+            builder.HasOne(x => x.Machine)
+                .WithMany(x => x.ErrorSolutions)
+                .HasForeignKey(x => x.MachineId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .IsRequired(false);
 
             builder.HasIndex(x => new { x.Brand, x.ErrorCode });
+            builder.HasIndex(x => x.MachineId);
         }
     }
 }

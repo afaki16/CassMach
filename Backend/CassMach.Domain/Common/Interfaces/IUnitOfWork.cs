@@ -16,6 +16,7 @@ public interface IUnitOfWork : IDisposable, IAsyncDisposable
     IRefreshTokenRepository RefreshTokens { get; }
     ITenantRepository Tenants { get; }
     IErrorSolutionRepository ErrorSolutions { get; }
+    IMachineRepository Machines { get; }
     IUserTokenBalanceRepository UserTokenBalances { get; }
     ITokenTransactionRepository TokenTransactions { get; }
     ISystemSettingRepository SystemSettings { get; }
