@@ -29,35 +29,90 @@
       <div v-if="messages.length === 0" class="ai-input-block">
 
         <!-- Makine Seçici -->
-        <div class="machine-selector">
-          <div class="machine-selector-inner">
-            <v-icon size="16" color="#475569">mdi-robot-industrial</v-icon>
-            <select
-              v-model="selectedMachineId"
-              class="machine-select"
-            >
-              <option :value="null">Makine seçin (opsiyonel)</option>
-              <option v-for="m in machines" :key="m.id" :value="m.id">
-                {{ m.brand }} {{ m.model }}{{ m.name ? ` — ${m.name}` : '' }}
-              </option>
-            </select>
-            <NuxtLink v-if="machines.length === 0" to="/machines" class="machine-add-link">
-              <v-icon size="14">mdi-plus</v-icon> Makine Ekle
-            </NuxtLink>
-          </div>
-          <!-- 2x Uyarı -->
-          <div v-if="!selectedMachineId" class="machine-penalty-warn">
-            <v-icon size="13" color="#b45309">mdi-alert-circle-outline</v-icon>
-            <span>Makine seçilmezse sorgu <strong>2x</strong> kredi tüketir</span>
-          </div>
-          <!-- Seçili Makine Badge -->
-          <div v-else class="machine-selected-badge">
-            <v-icon size="13" color="#166534">mdi-check-circle</v-icon>
-            <span>{{ selectedMachine?.brand }} {{ selectedMachine?.model }}</span>
-            <button class="machine-clear" @click="selectedMachineId = null">
-              <v-icon size="12">mdi-close</v-icon>
-            </button>
-          </div>
+        <div class="machine-picker" ref="machinePickerHeroRef">
+          <!-- Trigger -->
+          <button
+            class="machine-picker-trigger"
+            :class="{ 'machine-picker-trigger--selected': !!selectedMachineId, 'machine-picker-trigger--open': machineDropdownOpen }"
+            @click="machineDropdownOpen = !machineDropdownOpen"
+            type="button"
+          >
+            <div class="machine-picker-trigger-left">
+              <div class="machine-picker-icon" :class="{ 'machine-picker-icon--selected': !!selectedMachineId }">
+                <v-icon size="16" :color="selectedMachineId ? 'white' : '#64748b'">mdi-robot-industrial</v-icon>
+              </div>
+              <div class="machine-picker-text">
+                <span v-if="!selectedMachineId" class="machine-picker-placeholder">Makine seçin <span class="machine-picker-opt">(opsiyonel)</span></span>
+                <span v-else class="machine-picker-value">
+                  <strong>{{ selectedMachine?.brand }}</strong> {{ selectedMachine?.model }}
+                  <span v-if="selectedMachine?.name" class="machine-picker-name">— {{ selectedMachine?.name }}</span>
+                </span>
+              </div>
+            </div>
+            <div class="machine-picker-trigger-right">
+              <span v-if="!selectedMachineId" class="machine-picker-penalty">
+                <v-icon size="11" color="#f59e0b">mdi-lightning-bolt</v-icon>2x
+              </span>
+              <v-icon
+                size="16"
+                class="machine-picker-chevron"
+                :class="{ 'machine-picker-chevron--open': machineDropdownOpen }"
+                color="#94a3b8"
+              >mdi-chevron-down</v-icon>
+            </div>
+          </button>
+
+          <!-- Dropdown -->
+          <Transition name="picker-drop">
+            <div v-if="machineDropdownOpen" class="machine-picker-dropdown">
+              <!-- Boş durum -->
+              <div v-if="machines.length === 0" class="machine-picker-empty">
+                <v-icon size="28" color="#cbd5e1">mdi-robot-industrial-outline</v-icon>
+                <span>Henüz makine eklenmemiş</span>
+                <NuxtLink to="/machines" class="machine-picker-add-btn" @click="machineDropdownOpen = false">
+                  <v-icon size="14">mdi-plus</v-icon> Makine Ekle
+                </NuxtLink>
+              </div>
+              <!-- Liste -->
+              <template v-else>
+                <div class="machine-picker-list">
+                  <!-- Seçimi kaldır -->
+                  <button
+                    class="machine-picker-item machine-picker-item--none"
+                    :class="{ 'machine-picker-item--active': !selectedMachineId }"
+                    @click="selectedMachineId = null; machineDropdownOpen = false"
+                    type="button"
+                  >
+                    <div class="machine-picker-item-icon">
+                      <v-icon size="14" color="#94a3b8">mdi-close-circle-outline</v-icon>
+                    </div>
+                    <span class="machine-picker-item-label">Makine seçme</span>
+                    <span class="machine-picker-item-penalty">
+                      <v-icon size="11" color="#f59e0b">mdi-lightning-bolt</v-icon>2x kredi
+                    </span>
+                  </button>
+                  <!-- Makineler -->
+                  <button
+                    v-for="m in machines"
+                    :key="m.id"
+                    class="machine-picker-item"
+                    :class="{ 'machine-picker-item--active': selectedMachineId === m.id }"
+                    @click="selectedMachineId = m.id; machineDropdownOpen = false"
+                    type="button"
+                  >
+                    <div class="machine-picker-item-icon" :class="{ 'machine-picker-item-icon--sel': selectedMachineId === m.id }">
+                      <v-icon size="14" :color="selectedMachineId === m.id ? 'white' : '#64748b'">mdi-robot-industrial</v-icon>
+                    </div>
+                    <div class="machine-picker-item-info">
+                      <span class="machine-picker-item-brand">{{ m.brand }} {{ m.model }}</span>
+                      <span v-if="m.name" class="machine-picker-item-name">{{ m.name }}</span>
+                    </div>
+                    <v-icon v-if="selectedMachineId === m.id" size="16" color="#16a34a" class="machine-picker-check">mdi-check-circle</v-icon>
+                  </button>
+                </div>
+              </template>
+            </div>
+          </Transition>
         </div>
 
         <div class="ai-input-container ai-input-container--hero">
@@ -274,27 +329,83 @@
       </div>
 
       <!-- Chat modu makine seçici -->
-      <div class="machine-selector machine-selector--chat">
-        <div class="machine-selector-inner">
-          <v-icon size="16" color="#475569">mdi-robot-industrial</v-icon>
-          <select v-model="selectedMachineId" class="machine-select">
-            <option :value="null">Makine seçin</option>
-            <option v-for="m in machines" :key="m.id" :value="m.id">
-              {{ m.brand }} {{ m.model }}{{ m.name ? ` — ${m.name}` : '' }}
-            </option>
-          </select>
-        </div>
-        <div v-if="!selectedMachineId" class="machine-penalty-warn">
-          <v-icon size="13" color="#b45309">mdi-alert-circle-outline</v-icon>
-          <span>Makine seçilmezse <strong>2x</strong> kredi</span>
-        </div>
-        <div v-else class="machine-selected-badge">
-          <v-icon size="13" color="#166534">mdi-check-circle</v-icon>
-          <span>{{ selectedMachine?.brand }} {{ selectedMachine?.model }}</span>
-          <button class="machine-clear" @click="selectedMachineId = null">
-            <v-icon size="12">mdi-close</v-icon>
-          </button>
-        </div>
+      <div class="machine-picker machine-picker--chat" ref="machinePickerChatRef">
+        <button
+          class="machine-picker-trigger"
+          :class="{ 'machine-picker-trigger--selected': !!selectedMachineId, 'machine-picker-trigger--open': machineDropdownOpen }"
+          @click="machineDropdownOpen = !machineDropdownOpen"
+          type="button"
+        >
+          <div class="machine-picker-trigger-left">
+            <div class="machine-picker-icon" :class="{ 'machine-picker-icon--selected': !!selectedMachineId }">
+              <v-icon size="15" :color="selectedMachineId ? 'white' : '#64748b'">mdi-robot-industrial</v-icon>
+            </div>
+            <div class="machine-picker-text">
+              <span v-if="!selectedMachineId" class="machine-picker-placeholder">Makine seçin</span>
+              <span v-else class="machine-picker-value">
+                <strong>{{ selectedMachine?.brand }}</strong> {{ selectedMachine?.model }}
+              </span>
+            </div>
+          </div>
+          <div class="machine-picker-trigger-right">
+            <span v-if="!selectedMachineId" class="machine-picker-penalty">
+              <v-icon size="11" color="#f59e0b">mdi-lightning-bolt</v-icon>2x
+            </span>
+            <v-icon
+              size="16"
+              class="machine-picker-chevron"
+              :class="{ 'machine-picker-chevron--open': machineDropdownOpen }"
+              color="#94a3b8"
+            >mdi-chevron-down</v-icon>
+          </div>
+        </button>
+
+        <Transition name="picker-drop">
+          <div v-if="machineDropdownOpen" class="machine-picker-dropdown machine-picker-dropdown--up">
+            <div v-if="machines.length === 0" class="machine-picker-empty">
+              <v-icon size="24" color="#cbd5e1">mdi-robot-industrial-outline</v-icon>
+              <span>Makine eklenmemiş</span>
+              <NuxtLink to="/machines" class="machine-picker-add-btn" @click="machineDropdownOpen = false">
+                <v-icon size="13">mdi-plus</v-icon> Ekle
+              </NuxtLink>
+            </div>
+            <template v-else>
+              <div class="machine-picker-list">
+                <button
+                  class="machine-picker-item machine-picker-item--none"
+                  :class="{ 'machine-picker-item--active': !selectedMachineId }"
+                  @click="selectedMachineId = null; machineDropdownOpen = false"
+                  type="button"
+                >
+                  <div class="machine-picker-item-icon">
+                    <v-icon size="13" color="#94a3b8">mdi-close-circle-outline</v-icon>
+                  </div>
+                  <span class="machine-picker-item-label">Seçme</span>
+                  <span class="machine-picker-item-penalty">
+                    <v-icon size="10" color="#f59e0b">mdi-lightning-bolt</v-icon>2x
+                  </span>
+                </button>
+                <button
+                  v-for="m in machines"
+                  :key="m.id"
+                  class="machine-picker-item"
+                  :class="{ 'machine-picker-item--active': selectedMachineId === m.id }"
+                  @click="selectedMachineId = m.id; machineDropdownOpen = false"
+                  type="button"
+                >
+                  <div class="machine-picker-item-icon" :class="{ 'machine-picker-item-icon--sel': selectedMachineId === m.id }">
+                    <v-icon size="13" :color="selectedMachineId === m.id ? 'white' : '#64748b'">mdi-robot-industrial</v-icon>
+                  </div>
+                  <div class="machine-picker-item-info">
+                    <span class="machine-picker-item-brand">{{ m.brand }} {{ m.model }}</span>
+                    <span v-if="m.name" class="machine-picker-item-name">{{ m.name }}</span>
+                  </div>
+                  <v-icon v-if="selectedMachineId === m.id" size="15" color="#16a34a" class="machine-picker-check">mdi-check-circle</v-icon>
+                </button>
+              </div>
+            </template>
+          </div>
+        </Transition>
       </div>
 
       <!-- Chat Input (conversation mode) -->
@@ -337,6 +448,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
+import { onClickOutside } from '@vueuse/core'
 import { useAuthStore } from '~/stores/auth'
 import { API_ENDPOINTS } from '~/utils/apiEndpoints'
 import type { Machine } from '~/types'
@@ -384,6 +496,11 @@ const { getMachines } = useMachines()
 const machines = ref<Machine[]>([])
 const selectedMachineId = ref<number | null>(null)
 const selectedMachine = computed(() => machines.value.find(m => m.id === selectedMachineId.value) ?? null)
+const machineDropdownOpen = ref(false)
+const machinePickerHeroRef = ref<HTMLElement | null>(null)
+const machinePickerChatRef = ref<HTMLElement | null>(null)
+onClickOutside(machinePickerHeroRef, () => { machineDropdownOpen.value = false })
+onClickOutside(machinePickerChatRef, () => { machineDropdownOpen.value = false })
 
 const fetchMachines = async () => {
   try {
@@ -1780,85 +1897,288 @@ useHead({ title: 'Hata Asistanı - CassMach' })
   }
 }
 
-/* ── Makine Seçici ── */
-.machine-selector {
+/* ── Makine Picker ── */
+.machine-picker {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.machine-picker--chat {
+  margin-bottom: 8px;
+}
+
+/* Trigger button */
+.machine-picker-trigger {
+  width: 100%;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 10px;
-  padding: 8px 12px;
+  padding: 10px 14px;
   background: white;
-  border: 1px solid #e2e8f0;
+  border: 1.5px solid #e2e8f0;
   border-radius: 12px;
+  cursor: pointer;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  font-family: inherit;
   box-shadow: 0 1px 4px rgba(15,23,42,0.04);
 }
 
-.machine-selector--chat {
-  margin: 0 0 8px;
-  border-radius: 10px;
+.machine-picker-trigger:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(15,23,42,0.07);
 }
 
-.machine-selector-inner {
+.machine-picker-trigger--open {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
+}
+
+.machine-picker-trigger--selected {
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.machine-picker-trigger--selected.machine-picker-trigger--open {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34,197,94,0.12);
+}
+
+.machine-picker-trigger-left {
   display: flex;
   align-items: center;
-  gap: 8px;
-  flex: 1;
+  gap: 10px;
   min-width: 0;
 }
 
-.machine-select {
-  flex: 1;
-  border: none;
-  outline: none;
-  background: transparent;
-  font-size: 0.85rem;
-  color: #334155;
-  font-family: inherit;
-  cursor: pointer;
-  min-width: 0;
+.machine-picker-icon {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.18s;
 }
 
-.machine-add-link {
+.machine-picker-icon--selected {
+  background: #16a34a;
+}
+
+.machine-picker-text {
+  min-width: 0;
+  text-align: left;
+}
+
+.machine-picker-placeholder {
+  font-size: 0.875rem;
+  color: #94a3b8;
+}
+
+.machine-picker-opt {
   font-size: 0.78rem;
-  color: #2563eb;
-  text-decoration: none;
-  white-space: nowrap;
+  color: #cbd5e1;
+}
+
+.machine-picker-value {
+  font-size: 0.875rem;
+  color: #166534;
+}
+
+.machine-picker-name {
+  color: #4ade80;
+  font-size: 0.8rem;
+}
+
+.machine-picker-trigger-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.machine-picker-penalty {
   display: flex;
   align-items: center;
   gap: 2px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #d97706;
+  background: #fef3c7;
+  border-radius: 5px;
+  padding: 2px 6px;
 }
 
-.machine-add-link:hover { text-decoration: underline; }
+.machine-picker-chevron {
+  transition: transform 0.2s;
+}
 
-.machine-penalty-warn {
+.machine-picker-chevron--open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown */
+.machine-picker-dropdown {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(15,23,42,0.12), 0 2px 8px rgba(15,23,42,0.06);
+  z-index: 100;
+  overflow: hidden;
+}
+
+.machine-picker-dropdown--up {
+  top: auto;
+  bottom: calc(100% + 6px);
+}
+
+.machine-picker-list {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.machine-picker-list::-webkit-scrollbar { width: 4px; }
+.machine-picker-list::-webkit-scrollbar-track { background: transparent; }
+.machine-picker-list::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 2px; }
+
+.machine-picker-item {
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 4px;
-  font-size: 0.75rem;
-  color: #b45309;
-  white-space: nowrap;
-}
-
-.machine-selected-badge {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 0.75rem;
-  color: #166534;
-  background: #f0fdf4;
-  border-radius: 6px;
-  padding: 2px 8px;
-  white-space: nowrap;
-}
-
-.machine-clear {
-  background: none;
+  gap: 10px;
+  padding: 8px 10px;
   border: none;
+  border-radius: 9px;
+  background: none;
   cursor: pointer;
+  transition: background 0.14s;
+  text-align: left;
+  font-family: inherit;
+}
+
+.machine-picker-item:hover {
+  background: #f8fafc;
+}
+
+.machine-picker-item--active {
+  background: #f0fdf4;
+}
+
+.machine-picker-item--none .machine-picker-item-label {
   color: #94a3b8;
+  font-size: 0.83rem;
+  flex: 1;
+}
+
+.machine-picker-item-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: #f1f5f9;
   display: flex;
-  padding: 0;
-  margin-left: 2px;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.14s;
+}
+
+.machine-picker-item-icon--sel {
+  background: #16a34a;
+}
+
+.machine-picker-item-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.machine-picker-item-brand {
+  font-size: 0.855rem;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.machine-picker-item-name {
+  font-size: 0.77rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.machine-picker-item-penalty {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #d97706;
+  background: #fef3c7;
+  border-radius: 4px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+
+.machine-picker-check {
+  flex-shrink: 0;
+}
+
+.machine-picker-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 20px 16px;
+  color: #94a3b8;
+  font-size: 0.83rem;
+}
+
+.machine-picker-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.8rem;
+  color: white;
+  background: #2563eb;
+  border-radius: 7px;
+  padding: 5px 12px;
+  text-decoration: none;
+  transition: background 0.14s;
+}
+
+.machine-picker-add-btn:hover {
+  background: #1d4ed8;
+}
+
+/* Dropdown açılma animasyonu */
+.picker-drop-enter-active,
+.picker-drop-leave-active {
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.picker-drop-enter-from,
+.picker-drop-leave-to {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+}
+
+.machine-picker-dropdown--up.picker-drop-enter-from,
+.machine-picker-dropdown--up.picker-drop-leave-to {
+  transform: translateY(6px) scale(0.98);
 }
 </style>
