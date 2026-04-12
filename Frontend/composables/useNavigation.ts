@@ -56,6 +56,12 @@
       ]
     },
     {
+      title: 'Settings',
+      icon: 'mdi-cog',
+      to: '/settings',
+      roles: ['Admin', 'SuperAdmin']
+    },
+    {
       title: 'Admin Yönetimi',
       icon: 'mdi-shield-crown-outline',
       children: [
@@ -63,7 +69,7 @@
           title: 'Makine Kataloğu',
           icon: 'mdi-format-list-bulleted',
           to: '/machines',
-          permission: 'Machines.Read'
+          permission: 'Machines.Create'
         },
         {
           title: 'AI Kullanım Yönetimi',
@@ -73,12 +79,6 @@
         }
       ]
     },
-    {
-      title: 'Settings',
-      icon: 'mdi-cog',
-      to: '/settings',
-      roles: ['Admin', 'SuperAdmin']
-    }
   ]
 
   export const filterNavigationByPermissions = (
@@ -91,7 +91,7 @@
         // Check permission requirement
         if (item.permission && !hasPermission(item.permission)) return null
         // Check role requirement
-        if (item.roles && !item.roles.some(role => hasRole(role))) return null
+        if (item.roles && !item.roles.some((role: string) => hasRole(role))) return null
         // If item has children, filter recursively and return new object (do not mutate original)
         if (item.children) {
           const filteredChildren = filterNavigationByPermissions(item.children, hasPermission, hasRole)
