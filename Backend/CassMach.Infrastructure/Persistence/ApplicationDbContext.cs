@@ -42,7 +42,7 @@ namespace CassMach.Infrastructure.Persistence
             {
                 if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
                 {
-                    var method = typeof(ApplicationDbContext)
+                    var method = typeof(ApplicationDbContext) 
                         .GetMethod(nameof(SetSoftDeleteFilter), BindingFlags.NonPublic | BindingFlags.Instance)
                         .MakeGenericMethod(entityType.ClrType);
 
