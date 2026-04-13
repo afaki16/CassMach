@@ -144,16 +144,22 @@
         </div>
 
         <!-- Template Questions -->
-        <div class="template-chips">
+        <div v-if="templateQuestions.length > 0" class="template-chips">
           <button
             v-for="tpl in templateQuestions"
             :key="tpl.query"
             class="template-chip"
-            @click="searchQuery = tpl.query"
+            @click="searchQuery = tpl.query; selectedMachineId = tpl.machineId; $nextTick(() => textareaRef?.focus())"
           >
             <v-icon size="14" :color="tpl.color">{{ tpl.icon }}</v-icon>
             <span>{{ tpl.title }}</span>
           </button>
+        </div>
+        <div v-else class="template-chips">
+          <NuxtLink to="/my-machines" class="template-chip template-chip--add">
+            <v-icon size="14" color="#64748b">mdi-plus-circle-outline</v-icon>
+            <span>Makine ekleyerek hızlı sorgula</span>
+          </NuxtLink>
         </div>
       </div>
 
@@ -481,12 +487,15 @@ const currentRetryConversationId = ref<string | null>(null)
 const activeConversationId = ref<string | null>(null)
 const enrichmentForm = reactive<Record<string, string>>({ brand: '', model: '', errorCode: '', symptom: '' })
 
-const templateQuestions = [
-  { icon: 'mdi-alert-circle-outline', title: 'Fanuc Alarm 414', color: 'red', query: 'Fanuc alarm 414 nedir ve nasıl çözülür?' },
-  { icon: 'mdi-wrench-outline', title: 'Siemens F30001', color: 'blue', query: 'Siemens Sinumerik F30001 hata kodu çözümü' },
-  { icon: 'mdi-cog-outline', title: 'Haas Alarm 108', color: 'amber', query: 'Haas CNC alarm 108 ne anlama gelir?' },
-  { icon: 'mdi-chart-line', title: 'Mitsubishi E61', color: 'purple', query: 'Mitsubishi CNC E61 servo alarm nasıl giderilir?' },
-]
+const templateQuestions = computed(() =>
+  machines.value.slice(0, 4).map(m => ({
+    icon: 'mdi-robot-industrial',
+    title: m.name ? m.name : `${m.brand} ${m.model}`,
+    color: 'primary',
+    query: `${m.brand} ${m.model} `,
+    machineId: m.id
+  }))
+)
 
 const { get, post, patch } = useApi()
 const toast = useToast()
@@ -1158,6 +1167,17 @@ useHead({ title: 'Hata Asistanı - CassMach' })
   background: #f8fafc;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+}
+
+.template-chip--add {
+  text-decoration: none;
+  border-style: dashed;
+  color: #64748b;
+}
+
+.template-chip--add:hover {
+  border-color: #6366f1;
+  color: #6366f1;
 }
 
 /* Chat Section */
