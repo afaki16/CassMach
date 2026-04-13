@@ -1,7 +1,8 @@
+using CassMach.API.Extensions;
+using CassMach.Application;
 using CassMach.Infrastructure;
 using CassMach.Infrastructure.Persistence;
-using CassMach.Application;
-using CassMach.API.Extensions;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,12 +26,18 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
+// Auto migrate database
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<CassMach.Infrastructure.Persistence.ApplicationDbContext>();
+    db.Database.Migrate();
+}
+
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || app.Environment.IsStaging())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
-    
 }
 
 app.UseHttpsRedirection();
