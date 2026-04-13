@@ -37,7 +37,7 @@ export default defineNuxtConfig({
       'Plus+Jakarta+Sans': [600, 700, 800],
       'Material+Icons': true
     }
-  },
+  }, 
   
  runtimeConfig: {
   public: {
