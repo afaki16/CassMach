@@ -27,7 +27,8 @@ export default defineNuxtConfig({
     '@vueuse/nuxt',
     '@nuxtjs/google-fonts',
     '@nuxtjs/tailwindcss',
-    '@nuxt/icon'
+    '@nuxt/icon',
+   '@vercel/analytics/nuxt'
   ],
   
   googleFonts: {
@@ -38,15 +39,14 @@ export default defineNuxtConfig({
     }
   },
   
-  runtimeConfig: {
-    public: {
-      apiBase: process.env.API_BASE_URL || 'https://localhost:44333',
-      appName: 'CassMach',
-      appVersion: '1.0.0',
-      /** Tek layout: default (gradient layout kaldırıldı). */
-      defaultLayout: 'default'
-    }
-  },
+ runtimeConfig: {
+  public: {
+    apiBase: process.env.NUXT_PUBLIC_API_BASE_URL || 'https://api.zerorai.com',
+    appName: 'CassMach',
+    appVersion: '1.0.0',
+    defaultLayout: 'default'
+  }
+},
   
   app: {
     head: {
