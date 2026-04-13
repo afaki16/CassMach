@@ -30,3 +30,5 @@ Backend/CassMach.Application/CassMach.Application.csproj.lscache
 Backend/CassMach.Domain/CassMach.Domain.csproj.lscache
 
 Backend/CassMach.Infrastructure/CassMach.Infrastructure.csproj.lscache
+
+Backend/CassMach.API/appsettings.Development.json
