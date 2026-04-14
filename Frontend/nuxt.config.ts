@@ -28,7 +28,7 @@ export default defineNuxtConfig({
     '@nuxtjs/google-fonts',
     '@nuxtjs/tailwindcss',
     '@nuxt/icon',
-   '@vercel/analytics/nuxt'
+   // '@vercel/analytics/nuxt' — plugin/analytics.client.ts ile yönetiliyor
   ],
   
   googleFonts: {
