@@ -44,7 +44,7 @@ app.UseHttpsRedirection();
 
 // Add CORS middleware (must be before authentication)
 app.UseCors("DefaultCorsPolicy");
-
+ 
 // Authentication and Authorization (order is important)
 app.UseAuthentication();
 app.UseAuthorization();
