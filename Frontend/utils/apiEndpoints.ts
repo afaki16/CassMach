@@ -7,6 +7,7 @@ export const API_ENDPOINTS = {
     LOGOUT: '/api/auth/logout',
     REFRESH_TOKEN: '/api/auth/refresh-token',
     ME: '/api/auth/me',
+    CHANGE_PASSWORD: '/api/auth/change-password',
     FORGOT_PASSWORD: '/api/auth/forgot-password',
     RESET_PASSWORD: '/api/auth/reset-password',
     CONFIRM_EMAIL: '/api/auth/confirm-email',

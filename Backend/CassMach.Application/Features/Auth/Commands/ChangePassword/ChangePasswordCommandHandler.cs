@@ -21,28 +21,54 @@ using System.Threading.Tasks;
 namespace CassMach.Application.Features.Auth.Commands.ChangePassword
 {
     public class ChangePasswordCommandHandler : IRequestHandler<ChangePasswordCommand, Result>
-{
-    private readonly IPasswordService _passwordService;
-    private readonly ICurrentUserService _currentUserService;
-
-    public ChangePasswordCommandHandler(
-        IPasswordService passwordService,
-        ICurrentUserService currentUserService)
     {
-        _passwordService = passwordService;
-        _currentUserService = currentUserService;
-    }
+        private readonly IPasswordService _passwordService;
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IUnitOfWork _unitOfWork;
 
-    public async Task<Result> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
-    {
-        var userId = _currentUserService.UserId;
-        if (!userId.HasValue)
-            return Result<int>.Failure(Error.Failure(
-               ErrorCode.NotFound,
-               "User not authenticated"));
+        public ChangePasswordCommandHandler(
+            IPasswordService passwordService,
+            ICurrentUserService currentUserService,
+            IUnitOfWork unitOfWork)
+        {
+            _passwordService = passwordService;
+            _currentUserService = currentUserService;
+            _unitOfWork = unitOfWork;
+        }
 
-        // TODO: Implement password change logic
-        return Result.Success();
+        public async Task<Result> Handle(ChangePasswordCommand request, CancellationToken cancellationToken)
+        {
+            var userId = _currentUserService.UserId;
+            if (!userId.HasValue)
+                return Result.Failure(Error.Failure(ErrorCode.NotFound, "User not authenticated"));
+
+            var user = await _unitOfWork.Users.GetByIdAsync(userId.Value);
+            if (user is null)
+                return Result.Failure(Error.Failure(ErrorCode.NotFound, "User not found"));
+
+            var verifyResult = _passwordService.VerifyPassword(request.CurrentPassword, user.PasswordHash);
+            if (!verifyResult.IsSuccess)
+                return Result.Failure(verifyResult.Errors);
+
+            if (!verifyResult.Value)
+                return Result.Failure(Error.Failure(ErrorCode.ValidationFailed, "Current password is incorrect"));
+
+            var strengthResult = _passwordService.ValidatePasswordStrength(request.NewPassword);
+            if (!strengthResult.IsSuccess)
+                return Result.Failure(strengthResult.Errors);
+
+            if (!strengthResult.Value)
+                return Result.Failure(Error.Failure(ErrorCode.ValidationFailed, "New password does not meet strength requirements"));
+
+            var hashResult = _passwordService.HashPassword(request.NewPassword);
+            if (!hashResult.IsSuccess)
+                return Result.Failure(hashResult.Errors);
+
+            user.PasswordHash = hashResult.Value;
+            _unitOfWork.Users.Update(user);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+
+            return Result.Success();
+        }
     }
-}
 } 

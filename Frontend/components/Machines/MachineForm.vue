@@ -133,10 +133,8 @@ const handleSubmit = async () => {
   if (!valid) return
 
   emit('submit', {
-    data: {
-      brand: formData.brand.trim(),
-      model: formData.model.trim(),
-    }
+    brand: formData.brand.trim(),
+    model: formData.model.trim(),
   })
 }
 </script>
