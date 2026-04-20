@@ -17,6 +17,7 @@ using CassMach.Application.Features.Users.Dtos;
 using CassMach.Application.Features.Roles.Dtos;
 using CassMach.Application.Features.Tenants.Dtos;
 using CassMach.Application.Features.Permissions.Dtos;
+using CassMach.Application.Interfaces;
 
 namespace CassMach.Application.Features.Roles.Commands.UpdateRole
 {
@@ -25,12 +26,14 @@ namespace CassMach.Application.Features.Roles.Commands.UpdateRole
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ILogger<UpdateRoleCommandHandler> _logger;
+        private readonly IPermissionService _permissionService;
 
-        public UpdateRoleCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, ILogger<UpdateRoleCommandHandler> logger)
+        public UpdateRoleCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, ILogger<UpdateRoleCommandHandler> logger, IPermissionService permissionService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _logger = logger;
+            _permissionService = permissionService;
         }
 
         public async Task<Result<RoleDto>> Handle(UpdateRoleCommand request, CancellationToken cancellationToken)
@@ -75,29 +78,25 @@ namespace CassMach.Application.Features.Roles.Commands.UpdateRole
                 // Add new permissions if provided
                 if (request.PermissionIds?.Any() == true)
                 {
-                    _logger.LogInformation($"Adding {request.PermissionIds.Count()} permissions to role");
+                    var permissions = await _unitOfWork.Permissions.FindAsync(
+                        p => request.PermissionIds.Contains(p.Id));
 
-                    foreach (var permissionId in request.PermissionIds)
+                    foreach (var permission in permissions)
                     {
-                        // Verify permission exists
-                        var permission = await _unitOfWork.Permissions.GetByIdAsync(permissionId);
-                        if (permission == null)
-                        {
-                            _logger.LogWarning($"Permission with ID {permissionId} not found, skipping...");
-                            continue;
-                        }
-
                         var rolePermission = new RolePermission
                         {
                             RoleId = role.Id,
-                            PermissionId = permissionId
+                            PermissionId = permission.Id
                         };
                         await _unitOfWork.Roles.AddRolePermissionAsync(rolePermission);
-                        _logger.LogInformation($"Added permission {permission.Name} to role {role.Name}");
                     }
                 }
 
                 await _unitOfWork.SaveChangesAsync();
+
+                var affectedUserIds = await _unitOfWork.Users.GetUserIdsByRoleIdAsync(request.Id);
+                foreach (var userId in affectedUserIds)
+                    _permissionService.ClearUserPermissionCache(userId);
 
                 // Get updated role with permissions
                 var updatedRole = await _unitOfWork.Roles.GetRoleWithPermissionsAsync(role.Id);

@@ -163,8 +163,6 @@ namespace CassMach.Infrastructure.Services
         {
             try
             {
-                var userWithPermissions = await _unitOfWork.Users.GetUserWithPermissionsAsync(user.Id);
-                
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
@@ -181,7 +179,7 @@ namespace CassMach.Infrastructure.Services
                 }
 
                 // Add role claims
-                var roles = userWithPermissions.UserRoles.Select(ur => ur.Role).ToList();
+                var roles = user.UserRoles.Select(ur => ur.Role).ToList();
                 foreach (var role in roles)
                 {
                     claims.Add(new Claim(ClaimTypes.Role, role.Name));

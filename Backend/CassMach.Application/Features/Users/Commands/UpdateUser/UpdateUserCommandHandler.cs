@@ -27,12 +27,14 @@ namespace CassMach.Application.Features.Users.Commands.UpdateUser
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IPermissionService _permissionService;
 
-        public UpdateUserCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserService currentUserService)
+        public UpdateUserCommandHandler(IUnitOfWork unitOfWork, IMapper mapper, ICurrentUserService currentUserService, IPermissionService permissionService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _currentUserService = currentUserService;
+            _permissionService = permissionService;
         }
 
         public async Task<Result<UserListDto>> Handle(UpdateUserCommand request, CancellationToken cancellationToken)
@@ -116,6 +118,7 @@ namespace CassMach.Application.Features.Users.Commands.UpdateUser
                 }
             }
             await _unitOfWork.SaveChangesAsync();
+            _permissionService.ClearUserPermissionCache(request.Id);
 
             // Reload user with roles to get complete data for mapping
             _ = await _unitOfWork.Users.GetUserWithRolesAsync(user.Id);
