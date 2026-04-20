@@ -180,6 +180,14 @@ export const useAuth = () => {
     }
   }
 
+  const changePassword = async (currentPassword: string, newPassword: string) => {
+    const response = await api.post(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, {
+      currentPassword,
+      newPassword
+    })
+    return response
+  }
+
   const hasPermission = (permission: string): boolean => {
     return authStore.permissions.includes(permission)
   }
@@ -206,6 +214,7 @@ export const useAuth = () => {
     logout,
     refreshToken,
     getCurrentUser,
+    changePassword,
     hasPermission,
     hasRole,
     hasAnyPermission,

@@ -74,6 +74,11 @@
       ]
     },
     {
+      title: 'Profilim',
+      icon: 'mdi-account-circle-outline',
+      to: '/profile',
+    },
+    {
       title: 'Settings',
       icon: 'mdi-cog',
       to: '/settings',
