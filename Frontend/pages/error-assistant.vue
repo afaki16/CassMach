@@ -216,7 +216,14 @@
 
           <!-- System Message (retry divider, done stats, needs_info form) -->
           <div v-if="msg.role === 'system'" class="chat-system-msg">
-            <div v-if="msg.meta?.type === 'retry-divider'" class="retry-divider">
+            <div v-if="msg.meta?.type === 'machine_mismatch'" class="machine-mismatch-warning">
+              <v-icon size="16" color="#f59e0b">mdi-alert-outline</v-icon>
+              <span>
+                Sorunuzda <strong>{{ msg.meta.detectedBrand }}</strong> tespit edildi ancak farklı bir makine seçili.
+                Bu sorgu <strong>2x kredi</strong> olarak işlendi.
+              </span>
+            </div>
+            <div v-else-if="msg.meta?.type === 'retry-divider'" class="retry-divider">
               <div class="retry-divider-line"></div>
               <span class="retry-divider-text">
                 <v-icon size="14">mdi-refresh</v-icon>
@@ -788,6 +795,14 @@ const streamSSE = async (url: string, body?: any) => {
 const handleSSEEvent = (event: any) => {
   switch (event.type) {
     case 'parse':
+      if (event.machineMismatch) {
+        messages.value.push({
+          role: 'system',
+          content: '',
+          meta: { type: 'machine_mismatch', detectedBrand: event.brand }
+        })
+        scrollToBottom()
+      }
       break
 
     case 'needs_info':
@@ -1398,6 +1413,23 @@ useHead({ title: 'Hata Asistanı - CassMach' })
   width: 100%;
   max-width: 700px;
   margin: 0 auto;
+}
+
+/* Machine Mismatch Warning */
+.machine-mismatch-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  background: #fffbeb;
+  border: 1px solid #fcd34d;
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #92400e;
+  line-height: 1.5;
+}
+.machine-mismatch-warning strong {
+  color: #78350f;
 }
 
 /* Retry Divider */

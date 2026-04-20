@@ -58,9 +58,11 @@ namespace CassMach.API.Controllers
                 int? machineId = null;
                 bool hasMachine = dto.MachineId.HasValue;
 
+                bool machineMismatch = false;
+
                 if (hasMachine)
                 {
-                    // Makine seçildi → UserMachines üzerinden brand/model çek, parse etme
+                    // Makine seçildi → UserMachines üzerinden brand/model çek
                     var userMachine = await _unitOfWork.UserMachines.GetByIdAndUserId(dto.MachineId.Value, userId);
                     if (userMachine == null)
                     {
@@ -70,12 +72,20 @@ namespace CassMach.API.Controllers
                     machineId = userMachine.MachineId;
                     brand = userMachine.Machine.Brand;
                     model = userMachine.Machine.Model;
-                    // Hata kodu ve belirti sorudan çıkarılır (kısa parse, sadece errorCode+symptom)
+
                     var quickParse = await _claudeService.ParseUserQuestion(dto.Question);
                     errorCode = quickParse.ErrorCode;
                     symptom = quickParse.Symptom;
 
-                    await WriteSSEEvent(new { type = "parse", brand, errorCode, model });
+                    // Soruda farklı bir marka geçiyorsa mismatch
+                    if (!string.IsNullOrWhiteSpace(quickParse.Brand) &&
+                        !brand.Contains(quickParse.Brand, StringComparison.OrdinalIgnoreCase) &&
+                        !quickParse.Brand.Contains(brand, StringComparison.OrdinalIgnoreCase))
+                    {
+                        machineMismatch = true;
+                    }
+
+                    await WriteSSEEvent(new { type = "parse", brand, errorCode, model, machineMismatch });
                 }
                 else
                 {
@@ -112,11 +122,11 @@ namespace CassMach.API.Controllers
 
                 var conversationId = Guid.NewGuid();
 
-                // Multiplier: makine seçilmediyse penalty uygulanır
+                // Multiplier: makine seçilmediyse veya mismatch varsa penalty uygulanır
                 var multiplierSetting = await _unitOfWork.SystemSettings.GetByKey("token_multiplier");
                 var baseMultiplier = decimal.Parse(multiplierSetting.Value);
                 decimal penaltyFactor = 1m;
-                if (!hasMachine)
+                if (!hasMachine || machineMismatch)
                 {
                     var penaltySetting = await _unitOfWork.SystemSettings.GetByKey("no_machine_penalty");
                     if (penaltySetting != null)
