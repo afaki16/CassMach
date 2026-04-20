@@ -2,19 +2,14 @@ import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 import { mdi } from 'vuetify/iconsets/mdi'
+import { useAppData } from '../composables/useAppData'
 
-function extractColorsFromGradient(gradient: string): { dark: string; main: string; light: string } {
-  const hexMatches = gradient.match(/#[a-fA-F0-9]{6}/g)
-  if (!hexMatches || hexMatches.length < 2) {
-    return { dark: '#4338ca', main: '#2563eb', light: '#3b82f6' }
-  }
-  if (hexMatches.length === 2) {
-    return { dark: hexMatches[0], main: hexMatches[1], light: hexMatches[1] }
-  }
-  return { dark: hexMatches[0], main: hexMatches[1], light: hexMatches[2] }
-}
+export default defineNuxtPlugin(async () => {
+  const { loadAppData, appData } = useAppData()
+  await loadAppData()
 
-export default defineNuxtPlugin(async (nuxtApp) => {
+  const colors = appData.value?.theme?.colors
+
   let themeColors = {
     light: {
       colors: {
@@ -44,50 +39,43 @@ export default defineNuxtPlugin(async (nuxtApp) => {
     }
   }
 
-  try {
-    const response = await fetch('/data.json')
-    if (response.ok) {
-      const appData = await response.json()
-      const colors = appData.theme?.colors
-      if (colors) {
-        const p = typeof colors.primary === 'string' && colors.primary.includes('gradient')
-          ? extractColorsFromGradient(colors.primary)
-          : { dark: '#4338ca', main: '#2563eb', light: '#3b82f6' }
+  if (colors) {
+    const hexMatches = typeof colors.primary === 'string' ? colors.primary.match(/#[a-fA-F0-9]{6}/g) : null
+    const p = hexMatches && hexMatches.length >= 2
+      ? { dark: hexMatches[0], main: hexMatches[1], light: hexMatches[2] ?? hexMatches[1] }
+      : { dark: '#4338ca', main: '#2563eb', light: '#3b82f6' }
 
-        themeColors = {
-          light: {
-            colors: {
-              primary: p.main,
-              secondary: p.dark,
-              accent: colors.accent || '#82B1FF',
-              error: colors.error || '#FF5252',
-              info: colors.info || '#2196F3',
-              success: colors.success || '#4CAF50',
-              warning: colors.warning || '#FB8C00',
-              background: '#FAFAFA',
-              surface: '#FFFFFF'
-            }
-          },
-          dark: {
-            colors: {
-              primary: p.light,
-              secondary: p.dark,
-              accent: colors.accent || '#82B1FF',
-              error: colors.error || '#FF5252',
-              info: colors.info || '#2196F3',
-              success: colors.success || '#4CAF50',
-              warning: colors.warning || '#FB8C00',
-              background: '#121212',
-              surface: '#1E1E1E'
-            }
-          }
+    themeColors = {
+      light: {
+        colors: {
+          primary: p.main,
+          secondary: p.dark,
+          accent: colors.accent || '#82B1FF',
+          error: colors.error || '#FF5252',
+          info: colors.info || '#2196F3',
+          success: colors.success || '#4CAF50',
+          warning: colors.warning || '#FB8C00',
+          background: '#FAFAFA',
+          surface: '#FFFFFF'
+        }
+      },
+      dark: {
+        colors: {
+          primary: p.light,
+          secondary: p.dark,
+          accent: colors.accent || '#82B1FF',
+          error: colors.error || '#FF5252',
+          info: colors.info || '#2196F3',
+          success: colors.success || '#4CAF50',
+          warning: colors.warning || '#FB8C00',
+          background: '#121212',
+          surface: '#1E1E1E'
         }
       }
     }
-  } catch (error) {
-    console.warn('Could not load theme colors from data.json, using defaults:', error)
   }
 
+  const nuxtApp = useNuxtApp()
   const vuetify = createVuetify({
     components,
     directives,
