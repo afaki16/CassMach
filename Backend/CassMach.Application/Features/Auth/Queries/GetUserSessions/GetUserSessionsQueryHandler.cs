@@ -6,6 +6,7 @@ using CassMach.Application.Common.Results;
 using CassMach.Domain.Common.Enums;
 using CassMach.Domain.Models;
 using MediatR;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,10 +18,12 @@ namespace CassMach.Application.Features.Auth.Queries.GetUserSessions
     public class GetUserSessionsQueryHandler : IRequestHandler<GetUserSessionsQuery, Result<IEnumerable<SessionDto>>>
     {
         private readonly IRefreshTokenRepository _refreshTokenRepository;
+        private readonly ILogger<GetUserSessionsQueryHandler> _logger;
 
-        public GetUserSessionsQueryHandler(IRefreshTokenRepository refreshTokenRepository)
+        public GetUserSessionsQueryHandler(IRefreshTokenRepository refreshTokenRepository, ILogger<GetUserSessionsQueryHandler> logger)
         {
             _refreshTokenRepository = refreshTokenRepository;
+            _logger = logger;
         }
 
         public async Task<Result<IEnumerable<SessionDto>>> Handle(GetUserSessionsQuery request, CancellationToken cancellationToken)
@@ -52,9 +55,10 @@ namespace CassMach.Application.Features.Auth.Queries.GetUserSessions
         }
             catch (Exception ex)
             {
-            return Result<IEnumerable<SessionDto>>.Failure(Error.Failure(
-               ErrorCode.InvalidOperation,
-               $"Error retrieving user sessions: {ex.Message}"));
+                _logger.LogError(ex, "Unexpected error retrieving sessions for user {UserId}", request.UserId);
+                return Result<IEnumerable<SessionDto>>.Failure(Error.Failure(
+                    ErrorCode.InternalError,
+                    "An unexpected error occurred"));
             }
         }
     }

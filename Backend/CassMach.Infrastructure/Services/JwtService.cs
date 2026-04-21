@@ -9,6 +9,7 @@ using CassMach.Domain.Entities;
 using CassMach.Domain.Models;
 using CassMach.Domain.Common.Enums;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
@@ -27,17 +28,20 @@ namespace CassMach.Infrastructure.Services
         private readonly IUnitOfWork _unitOfWork;
         private readonly IPasswordService _passwordService;
         private readonly IPermissionService _permissionService;
+        private readonly ILogger<JwtService> _logger;
 
         public JwtService(
             IConfiguration configuration,
             IUnitOfWork unitOfWork,
             IPasswordService passwordService,
-            IPermissionService permissionService)
+            IPermissionService permissionService,
+            ILogger<JwtService> logger)
         {
             _configuration = configuration;
             _unitOfWork = unitOfWork;
             _passwordService = passwordService;
             _permissionService = permissionService;
+            _logger = logger;
         }
 
     public async Task<Result<LoginResponseDto>> LoginAsync(string email, string password, string ipAddress, string userAgent, string deviceId = null, string deviceName = null, bool rememberMe = false, int? tenantId = null)
@@ -106,57 +110,15 @@ namespace CassMach.Infrastructure.Services
             // Rol/izin değişikliklerinden sonra eski bellek önbelleğini kullanmayıp DB'den taze izin yüklensin
             _permissionService.ClearUserPermissionCache(user.Id);
 
-            var response = new LoginResponseDto
-            {
-                AccessToken = accessTokenResult.Value,
-                RefreshToken = refreshTokenResult.Value.PlainToken,
-                ExpiresAt = refreshTokenResult.Value.Stored.ExpiryDate,
-                User = new Application.Features.Users.Dtos.UserDto
-                {
-                    Id = user.Id,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    FullName = user.FullName,
-                    Email = user.Email,
-                    PhoneNumber = user.PhoneNumber,
-                    Status = user.Status,
-                    EmailConfirmed = user.EmailConfirmed,
-                    PhoneConfirmed = user.PhoneConfirmed,
-                    ProfileImageUrl = user.ProfileImageUrl,
-                    CreatedDate = user.CreatedDate,
-                    TenantId = user.TenantId,
-                    Roles = user.UserRoles.Select(ur => new Application.Features.Roles.Dtos.RoleDto
-                    {
-                        Id = ur.Role.Id,
-                        Name = ur.Role.Name,
-                        Description = ur.Role.Description,
-                        IsSystemRole = ur.Role.IsSystemRole,
-                        CreatedDate = ur.Role.CreatedDate
-
-
-                    }).ToList(),
-                    Permissions = user.UserRoles
-                        .SelectMany(ur => ur.Role.RolePermissions.Select(rp => rp.Permission))
-                        .Distinct()
-                        .Select(p => new Application.Features.Permissions.Dtos.PermissionDto
-                        {
-                            Id = p.Id,
-                            Name = p.Name,
-                            Description = p.Description,
-                            Resource = p.Resource,
-                            Type = p.Type,
-                            FullPermission = p.FullPermission
-                        }).ToList()
-                }
-            };
-
-            return Result<LoginResponseDto>.Success(response);
+            return Result<LoginResponseDto>.Success(
+                BuildLoginResponse(user, accessTokenResult.Value, refreshTokenResult.Value));
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Unexpected error during login for email {Email}", email);
             return Result<LoginResponseDto>.Failure(Error.Failure(
                 ErrorCode.InternalError,
-                $"Login failed: {ex.Message}"));
+                "An unexpected error occurred"));
         }
     }
     public async Task<Result<string>> GenerateAccessTokenAsync(User user)
@@ -207,8 +169,9 @@ namespace CassMach.Infrastructure.Services
         }
             catch (Exception ex)
             {
-               return Result<string>.Failure(Error.Failure(ErrorCode.ValidationFailed, $"Error generating access token: {ex.Message}"));
-             }
+                _logger.LogError(ex, "Unexpected error generating access token for user {UserId}", user.Id);
+                return Result<string>.Failure(Error.Failure(ErrorCode.InternalError, "An unexpected error occurred"));
+            }
     }
 
         public async Task<Result<RefreshTokenIssueResult>> GenerateRefreshTokenAsync(User user, string ipAddress, string userAgent, string deviceId = null, string deviceName = null, bool rememberMe = false, DateTime? preserveExpiryDate = null)
@@ -265,8 +228,9 @@ namespace CassMach.Infrastructure.Services
         }
             catch (Exception ex)
             {
-              return Result<RefreshTokenIssueResult>.Failure(Error.Failure(ErrorCode.ValidationFailed, $"Error generating refresh token: {ex.Message}"));
-             }
+                _logger.LogError(ex, "Unexpected error generating refresh token for user {UserId}", user.Id);
+                return Result<RefreshTokenIssueResult>.Failure(Error.Failure(ErrorCode.InternalError, "An unexpected error occurred"));
+            }
     }
 
         private string GetDeviceType(string userAgent)
@@ -351,57 +315,63 @@ namespace CassMach.Infrastructure.Services
 
             _permissionService.ClearUserPermissionCache(user.Id);
 
-            var response = new LoginResponseDto
-            {
-                AccessToken = newAccessTokenResult.Value,
-                RefreshToken = newRefreshTokenResult.Value.PlainToken,
-                ExpiresAt = newRefreshTokenResult.Value.Stored.ExpiryDate,
-                User = new Application.Features.Users.Dtos.UserDto
-                {
-                    Id = user.Id,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    FullName = user.FullName,
-                    Email = user.Email,
-                    PhoneNumber = user.PhoneNumber,
-                    Status = user.Status,
-                    EmailConfirmed = user.EmailConfirmed,
-                    PhoneConfirmed = user.PhoneConfirmed,
-                    ProfileImageUrl = user.ProfileImageUrl,
-                    CreatedDate = user.CreatedDate,
-                    TenantId = user.TenantId,
-                    Roles = user.UserRoles.Select(ur => new Application.Features.Roles.Dtos.RoleDto
-                    {
-                        Id = ur.Role.Id,
-                        Name = ur.Role.Name,
-                        Description = ur.Role.Description,
-                        IsSystemRole = ur.Role.IsSystemRole,
-                        CreatedDate = ur.Role.CreatedDate
-                    }).ToList(),
-                    Permissions = user.UserRoles
-                        .SelectMany(ur => ur.Role.RolePermissions.Select(rp => rp.Permission))
-                        .Distinct()
-                        .Select(p => new Application.Features.Permissions.Dtos.PermissionDto
-                        {
-                            Id = p.Id,
-                            Name = p.Name,
-                            Description = p.Description,
-                            Resource = p.Resource,
-                            Type = p.Type,
-                            FullPermission = p.FullPermission
-                        }).ToList()
-                }
-            };
-
-            return Result<LoginResponseDto>.Success(response);
+            return Result<LoginResponseDto>.Success(
+                BuildLoginResponse(user, newAccessTokenResult.Value, newRefreshTokenResult.Value));
         }
         catch (Exception ex)
         {
+            _logger.LogError(ex, "Unexpected error during token refresh");
             return Result<LoginResponseDto>.Failure(Error.Failure(
                 ErrorCode.InternalError,
-                $"Error refreshing token: {ex.Message}"));
+                "An unexpected error occurred"));
         }
     }
+    private static LoginResponseDto BuildLoginResponse(
+        User user, string accessToken, RefreshTokenIssueResult refreshTokenResult)
+    {
+        return new LoginResponseDto
+        {
+            AccessToken = accessToken,
+            RefreshToken = refreshTokenResult.PlainToken,
+            ExpiresAt = refreshTokenResult.Stored.ExpiryDate,
+            User = new Application.Features.Users.Dtos.UserDto
+            {
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                FullName = user.FullName,
+                Email = user.Email,
+                PhoneNumber = user.PhoneNumber,
+                Status = user.Status,
+                EmailConfirmed = user.EmailConfirmed,
+                PhoneConfirmed = user.PhoneConfirmed,
+                ProfileImageUrl = user.ProfileImageUrl,
+                CreatedDate = user.CreatedDate,
+                TenantId = user.TenantId,
+                Roles = user.UserRoles.Select(ur => new Application.Features.Roles.Dtos.RoleDto
+                {
+                    Id = ur.Role.Id,
+                    Name = ur.Role.Name,
+                    Description = ur.Role.Description,
+                    IsSystemRole = ur.Role.IsSystemRole,
+                    CreatedDate = ur.Role.CreatedDate
+                }).ToList(),
+                Permissions = user.UserRoles
+                    .SelectMany(ur => ur.Role.RolePermissions.Select(rp => rp.Permission))
+                    .Distinct()
+                    .Select(p => new Application.Features.Permissions.Dtos.PermissionDto
+                    {
+                        Id = p.Id,
+                        Name = p.Name,
+                        Description = p.Description,
+                        Resource = p.Resource,
+                        Type = p.Type,
+                        FullPermission = p.FullPermission
+                    }).ToList()
+            }
+        };
+    }
+
     public async Task<Result> RevokeTokenAsync(string refreshToken, string ipAddress = null, string userAgent = null, string reason = null)
         {
             try
@@ -412,8 +382,9 @@ namespace CassMach.Infrastructure.Services
             }
             catch (Exception ex)
             {
-            return Result.Failure(Error.Failure(ErrorCode.ValidationFailed, $"Error revoking user tokens: {ex.Message}"));
-        }
+                _logger.LogError(ex, "Unexpected error revoking token");
+                return Result.Failure(Error.Failure(ErrorCode.InternalError, "An unexpected error occurred"));
+            }
         }
 
         public async Task<Result> RevokeAllUserTokensAsync(int userId, string ipAddress = null, string userAgent = null, string reason = null)
@@ -426,8 +397,9 @@ namespace CassMach.Infrastructure.Services
             }
             catch (Exception ex)
             {
-            return Result.Failure(Error.Failure(ErrorCode.ValidationFailed, $"Error revoking user tokens: {ex.Message}"));
-        }
+                _logger.LogError(ex, "Unexpected error revoking all tokens for user {UserId}", userId);
+                return Result.Failure(Error.Failure(ErrorCode.InternalError, "An unexpected error occurred"));
+            }
         }
 
         public async Task<Result> RevokeTokensByDeviceAsync(int userId, string deviceId, string ipAddress = null, string userAgent = null, string reason = null)
@@ -440,8 +412,9 @@ namespace CassMach.Infrastructure.Services
             }
             catch (Exception ex)
             {
-            return Result.Failure(Error.Failure(ErrorCode.ValidationFailed, $"Error revoking user tokens: {ex.Message}"));
-        }
+                _logger.LogError(ex, "Unexpected error revoking tokens for user {UserId} device {DeviceId}", userId, deviceId);
+                return Result.Failure(Error.Failure(ErrorCode.InternalError, "An unexpected error occurred"));
+            }
         }
 
         public ClaimsPrincipal GetClaimsFromExpiredToken(string token)

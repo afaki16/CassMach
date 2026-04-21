@@ -1,4 +1,5 @@
 using CassMach.API.Extensions;
+using CassMach.API.Middleware;
 using CassMach.Application;
 using CassMach.Infrastructure;
 using CassMach.Infrastructure.Persistence;
@@ -44,7 +45,9 @@ app.UseHttpsRedirection();
 
 // Add CORS middleware (must be before authentication)
 app.UseCors("DefaultCorsPolicy");
- 
+
+app.UseMiddleware<RequestLoggingMiddleware>();
+
 // Authentication and Authorization (order is important)
 app.UseAuthentication();
 app.UseAuthorization();
